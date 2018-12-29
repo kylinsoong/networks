@@ -1,0 +1,29 @@
+
+getDatetime 是简单的客户端服务器端通信的示例：
+
+* 服务器端，监听在 5000 端口，且对任意客户端请求返回 `时间日期` 字符串
+* 客户端，需要传入一个参数(服务器端的 IP 地址)，根据传入的参数建立服务器端连接，建立完成后接收 `时间日期` 字符串，并打印输出。
+
+*server.c*
+
+include::server.c[]
+
+*client.c*
+
+include::client.c[]
+
+[source, text]
+.*编译并运行 server.c*
+----
+# gcc server.c -o server
+# ./server
+----
+
+[source, text]
+.*编译并运行 client.c*
+----
+# gcc client.c -o client
+# ./client 10.66.208.131
+Sun Dec 30 08:33:59 2018
+----
+

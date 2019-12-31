@@ -1,0 +1,14 @@
+= Socket Tools
+
+A series of tools that provide service via socket:
+
+|===
+|Name |Description
+
+|link:datetime/README.adoc[datetime]
+|Provide server datatime via socket 5000 port
+
+|link:echo/README.adoc[echo]
+|Provide echo service via socket 8877 port
+
+|===

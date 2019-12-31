@@ -1,2 +1,10 @@
 = echo
 
+== Run
+
+[source, bash]
+----
+gcc server.c lib_utils.c lib_ios.c lib_socket.c str_echo.c -o echoserver
+
+gcc client.c lib_utils.c lib_ios.c lib_socket.c str_cli.c -o echoclient
+----

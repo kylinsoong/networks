@@ -1,10 +1,32 @@
-= echo
+= 回射服务
 
-== Run
+== 编译运行
 
 [source, bash]
 ----
 gcc server.c lib_utils.c lib_ios.c lib_socket.c str_echo.c -o echoserver
+./echoserver
 
 gcc client.c lib_utils.c lib_ios.c lib_socket.c str_cli.c -o echoclient
+./echoclient
 ----
+
+== User Guide
+
+.*标准因特网服务*
+|===
+|名称 |命令 |说明
+
+|时间获取
+|daytime
+|返回一个可读的时间和日期
+
+|字符生成
+|chargen
+|返回一个随机字符串
+
+|流逝时间获取
+|time
+|返回一个 32 位数值时间
+
+|===

@@ -1,0 +1,37 @@
+when HTTP_REQUEST {
+    set mylist [list "def" "lmo" "xyz" 1 "abc"]
+    log local0. "List: $mylist"
+    set mylist [lsort $mylist]
+    log local0. "Sorted first list: $mylist"
+    
+    lappend mylist "rst" 222
+    log local0. "Second list: $mylist"
+    set mylist [lsort $mylist]
+    log local0. "Sorted senond list: $mylist"
+    
+    set mylist [linsert $mylist 1 "f5"]
+    log local0. "Third list: $mylist"
+    
+    log local0. "Third list length: [llength $mylist]"
+    
+    lset mylist 3 "456"
+    log local0. "Fourth list: $mylist"
+    
+    set item [lindex $mylist 3]
+    log local0. "Item #4: '$item'"
+    
+    set find1 [lsearch $mylist "rst"]
+    set find2 [lsearch $mylist 222]
+    set find3 [lsearch $mylist "deflmo"]
+    log local0. "List item 'rst' at index # $find1" 
+    log local0. "List item '222' at index # $find2" 
+    log local0. "List item 'deflmo' at index # $find3"
+    
+    set myaddress "801 5th Ave, Seattle, WA 98104 USA"
+    set mylist [split $myaddress " "]
+    log local0. "First item: '[lindex $mylist 0]'"
+    foreach item $mylist {
+        set itemnumber [lsearch $mylist $item]
+        log local0. "Index #$itemnumber: '$item'"
+    }
+}

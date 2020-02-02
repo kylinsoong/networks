@@ -15,4 +15,16 @@ A series of iRules which can direct add on F5 BIG-IP
 4. Log TCP egment and IP packet
 5. Log IP HTTP parameters 
 
+|link:example_list.iRules[example_list.iRules]
+|Example of using list.
+
+|link:example_switch.iRules[example_switch.iRules]
+|Example of using switch
+
+|link:example_ifelse.iRules[example_ifelse.iRules]
+|Example of using if else
+
+|link:example_print_http_headers.iRules[example_print_http_headers.iRules]
+|Iterate http headers and print to log
+
 |===

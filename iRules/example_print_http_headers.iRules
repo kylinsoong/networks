@@ -1,0 +1,23 @@
+when HTTP_REQUEST {
+    set mylist [split [HTTP::header names] " "]
+    log local0. "HTTP header list: $mylist"
+    
+    set mylist [lsort $mylist]
+    log local0. "Sorted list: $mylist"
+    log local0. "List length: [llength $mylist]"
+    
+    set item [lindex $mylist 3]
+    log local0. "Item #4: '$item'"
+    
+    set find1 [lsearch $mylist "Accept-Encoding"]
+    set find2 [lsearch $mylist "X-Forwarded-For"]
+    log local0. "List item 'Accept-Encoding' at index # $find1"
+    log local0. "List item 'X-Forwarded-For' at index # $find2"
+    
+    foreach item $mylist {
+        set itemnumber [lsearch $mylist $item]
+        incr itemnumber
+        log local0. "Index #$itemnumber: '$item'"
+    }
+
+}

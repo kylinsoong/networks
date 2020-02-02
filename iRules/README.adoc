@@ -1,0 +1,18 @@
+= iRules
+
+A series of iRules which can direct add on F5 BIG-IP
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|link:http_debug.iRules[http_debug.iRules]
+|Debug the http request by events(`CLIENT_ACCEPTED` -> `HTTP_REQUEST` -> `LB_SELECTED` -> `SERVER_CONNECTED` -> `HTTP_RESPONSE`):
+
+1. Log TCP segment and IP packet
+2. Log IP HTTP parameters
+3. Log LB selection
+4. Log TCP egment and IP packet
+5. Log IP HTTP parameters 
+
+|===

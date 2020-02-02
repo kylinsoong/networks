@@ -1,0 +1,61 @@
+when RULE_INIT {
+    log local0. "iRule created or updated."
+}
+
+when CLIENT_ACCEPTED {
+    log local0. "Client connection accepted,
+    IP::client_addr: [IP::client_addr],
+    IP::idle_timeout: [IP::idle_timeout],
+    IP::local_addr: [IP::local_addr],
+    IP::tos: [IP::tos],
+    ip_ttl: [ip_ttl],
+    LB::server: [LB::server],
+    TCP::bandwidth: [TCP::bandwidth],
+    TCP::client_port: [TCP::client_port],
+    TCP::local_port: [TCP::local_port],
+    TCP::mss: [TCP::mss],
+    TCP::offset: [TCP::offset],
+    TCP::remote_port: [TCP::remote_port],
+    TCP::rtt: [TCP::rtt]"
+}
+
+when HTTP_REQUEST {
+    log local0. "Client made an HTTP request,
+    HTTP::host: [HTTP::host],
+    HTTP::is_keepalive: [HTTP::is_keepalive],
+    HTTP::is_redirect: [HTTP::is_redirect],
+    HTTP::method: [HTTP::method],
+    HTTP::path: [HTTP::path],
+    HTTP::request: [HTTP::request],
+    HTTP::request_num: [HTTP::request_num],
+    HTTP::uri: [HTTP::uri],
+    LB::server: [LB::server]"
+}
+
+when LB_SELECTED {
+    log local0. "Pool member selected,
+    LB::server : [LB::server]"
+}
+
+when SERVER_CONNECTED {
+    log local0. "Connection made with pool member,
+    IP::client_addr: [IP::client_addr],
+    IP::idle_timeout: [IP::idle_timeout],
+    IP::local_addr: [IP::local_addr],
+    IP::server_addr: [IP::server_addr],
+    ip_ttl: [ip_ttl],
+    TCP::bandwidth: [TCP::bandwidth],
+    TCP::client_port: [TCP::client_port],
+    TCP::local_port: [TCP::local_port],
+    TCP::mss: [TCP::mss],
+    TCP::offset: [TCP::offset],
+    TCP::remote_port: [TCP::remote_port],
+    TCP::rtt: [TCP::rtt]"
+}
+
+when HTTP_RESPONSE {
+    log local0. "Pool member made an HTTP response,
+    HTTP::is_keepalive: [HTTP::is_keepalive],
+    HTTP::is_redirect: [HTTP::is_redirect],
+    HTTP::status: [HTTP::status]"
+}

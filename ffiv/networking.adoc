@@ -1,0 +1,148 @@
+= Networking the Big-IP
+:toc: manual
+
+
+== Routed Mode 
+
+[source, bash]
+.*1. Set up Routed mode - create http pool, http vs*
+----
+tmsh create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
+tmsh create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool
+----
+
+[source, bash]
+.*2. How Routed Mode Works*
+----
+$ curl -i http://10.1.10.20/hello
+HTTP/1.1 200 OK
+Date: Thu, 06 Feb 2020 22:17:52 GMT
+Server: Apache/2.4.7 (Ubuntu) PHP/5.5.9-1ubuntu4.12 OpenSSL/1.0.1f
+Last-Modified: Sat, 01 Feb 2020 18:50:10 GMT
+ETag: "c-59d8828df3517"
+Accept-Ranges: bytes
+Content-Length: 12
+Connection: close
+
+Hello World
+----
+
+*3. Packes Flow*
+
+image:img/routed-mode-flow.png[]
+
+[source, txt]
+.*4. Catch the dump*
+----
+# tcpdump -ni external host 10.1.10.20
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on external, link-type EN10MB (Ethernet), capture size 65535 bytes
+06:03:50.056058 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [S], seq 193635836, win 8192, options [mss 1460,nop,wscale 2,nop,nop,sackOK], length 0 in slot1/tmm1 lis=
+06:03:50.056249 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [S], seq 2383333476, win 8192, options [mss 1460,nop,wscale 2,nop,nop,sackOK], length 0 in slot1/tmm0 lis=
+06:03:50.056805 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [S.], seq 690585231, ack 2383333477, win 29200, options [mss 1460,nop,nop,sackOK,nop,wscale 7], length 0 out slot1/tmm0 lis=/Common/http_vs
+06:03:50.056971 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [S.], seq 2371876499, ack 193635837, win 29200, options [mss 1460,nop,nop,sackOK,nop,wscale 7], length 0 out slot1/tmm1 lis=/Common/http_vs
+06:03:50.057345 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [.], ack 1, win 16425, length 0 in slot1/tmm0 lis=/Common/http_vs
+06:03:50.057783 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [.], ack 1, win 16425, length 0 in slot1/tmm1 lis=/Common/http_vs
+06:03:50.077088 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [P.], seq 1:406, ack 1, win 16425, length 405: HTTP: GET / HTTP/1.1 in slot1/tmm0 lis=/Common/http_vs
+06:03:50.077694 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [.], ack 406, win 237, length 0 out slot1/tmm0 lis=/Common/http_vs
+06:03:50.079777 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [.], seq 1:1461, ack 406, win 237, length 1460: HTTP: HTTP/1.1 200 OK out slot1/tmm0 lis=/Common/http_vs
+06:03:50.080680 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [P.], seq 1461:1912, ack 406, win 237, length 451: HTTP out slot1/tmm0 lis=/Common/http_vs
+06:03:50.080758 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [F.], seq 1912, ack 406, win 237, length 0 out slot1/tmm0 lis=/Common/http_vs
+06:03:50.081748 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [.], ack 1913, win 16425, length 0 in slot1/tmm0 lis=/Common/http_vs
+06:03:50.124361 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [F.], seq 406, ack 1913, win 16425, length 0 in slot1/tmm0 lis=/Common/http_vs
+06:03:50.124950 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [.], ack 407, win 237, length 0 out slot1/tmm0 lis=/Common/http_vs
+06:03:50.341341 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [P.], seq 1:285, ack 1, win 16425, length 284: HTTP: HEAD / HTTP/1.1 in slot1/tmm1 lis=/Common/http_vs
+06:03:50.342273 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [.], ack 285, win 237, length 0 out slot1/tmm1 lis=/Common/http_vs
+06:03:50.343038 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [P.], seq 1:206, ack 285, win 237, length 205: HTTP: HTTP/1.1 200 OK out slot1/tmm1 lis=/Common/http_vs
+06:03:50.343362 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [F.], seq 206, ack 285, win 237, length 0 out slot1/tmm1 lis=/Common/http_vs
+06:03:50.343959 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [.], ack 207, win 16373, length 0 in slot1/tmm1 lis=/Common/http_vs
+06:03:50.344252 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [F.], seq 285, ack 207, win 16373, length 0 in slot1/tmm1 lis=/Common/http_vs
+06:03:50.345045 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [.], ack 286, win 237, length 0 out slot1/tmm1 lis=/Common/http_vs
+----
+
+[source, bash]
+.*5. check the tcp status from backend server*
+----
+$ netstat -antulop | grep 8081
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+tcp6       0      0 :::8081                 :::*                    LISTEN      -                off (0.00/0/0)
+tcp6       0      0 10.1.20.12:8081         10.1.10.199:4650        TIME_WAIT   -                timewait (33.76/0/0)
+tcp6       0      0 10.1.20.12:8081         10.1.10.199:10177       TIME_WAIT   -                timewait (33.54/0/0)
+----
+
+[source, bash]
+.*6. Check the backend server gateway*
+----
+$ ip route | grep default
+default via 10.1.20.240 dev eth1  proto static
+----
+
+[source, bash]
+.*7. Clean up*
+----
+tmsh delete ltm virtual http_vs
+tmsh delete ltm pool http_pool 
+----
+
+== NAT
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----

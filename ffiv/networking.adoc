@@ -1,7 +1,6 @@
 = Networking the Big-IP
 :toc: manual
 
-
 == Routed Mode 
 
 [source, bash]
@@ -34,41 +33,13 @@ image:img/routed-mode-flow.png[]
 [source, txt]
 .*4. Catch the dump*
 ----
-# tcpdump -ni external host 10.1.10.20
-tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
-listening on external, link-type EN10MB (Ethernet), capture size 65535 bytes
-06:03:50.056058 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [S], seq 193635836, win 8192, options [mss 1460,nop,wscale 2,nop,nop,sackOK], length 0 in slot1/tmm1 lis=
-06:03:50.056249 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [S], seq 2383333476, win 8192, options [mss 1460,nop,wscale 2,nop,nop,sackOK], length 0 in slot1/tmm0 lis=
-06:03:50.056805 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [S.], seq 690585231, ack 2383333477, win 29200, options [mss 1460,nop,nop,sackOK,nop,wscale 7], length 0 out slot1/tmm0 lis=/Common/http_vs
-06:03:50.056971 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [S.], seq 2371876499, ack 193635837, win 29200, options [mss 1460,nop,nop,sackOK,nop,wscale 7], length 0 out slot1/tmm1 lis=/Common/http_vs
-06:03:50.057345 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [.], ack 1, win 16425, length 0 in slot1/tmm0 lis=/Common/http_vs
-06:03:50.057783 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [.], ack 1, win 16425, length 0 in slot1/tmm1 lis=/Common/http_vs
-06:03:50.077088 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [P.], seq 1:406, ack 1, win 16425, length 405: HTTP: GET / HTTP/1.1 in slot1/tmm0 lis=/Common/http_vs
-06:03:50.077694 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [.], ack 406, win 237, length 0 out slot1/tmm0 lis=/Common/http_vs
-06:03:50.079777 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [.], seq 1:1461, ack 406, win 237, length 1460: HTTP: HTTP/1.1 200 OK out slot1/tmm0 lis=/Common/http_vs
-06:03:50.080680 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [P.], seq 1461:1912, ack 406, win 237, length 451: HTTP out slot1/tmm0 lis=/Common/http_vs
-06:03:50.080758 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [F.], seq 1912, ack 406, win 237, length 0 out slot1/tmm0 lis=/Common/http_vs
-06:03:50.081748 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [.], ack 1913, win 16425, length 0 in slot1/tmm0 lis=/Common/http_vs
-06:03:50.124361 IP 10.1.10.199.49246 > 10.1.10.20.http: Flags [F.], seq 406, ack 1913, win 16425, length 0 in slot1/tmm0 lis=/Common/http_vs
-06:03:50.124950 IP 10.1.10.20.http > 10.1.10.199.49246: Flags [.], ack 407, win 237, length 0 out slot1/tmm0 lis=/Common/http_vs
-06:03:50.341341 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [P.], seq 1:285, ack 1, win 16425, length 284: HTTP: HEAD / HTTP/1.1 in slot1/tmm1 lis=/Common/http_vs
-06:03:50.342273 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [.], ack 285, win 237, length 0 out slot1/tmm1 lis=/Common/http_vs
-06:03:50.343038 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [P.], seq 1:206, ack 285, win 237, length 205: HTTP: HTTP/1.1 200 OK out slot1/tmm1 lis=/Common/http_vs
-06:03:50.343362 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [F.], seq 206, ack 285, win 237, length 0 out slot1/tmm1 lis=/Common/http_vs
-06:03:50.343959 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [.], ack 207, win 16373, length 0 in slot1/tmm1 lis=/Common/http_vs
-06:03:50.344252 IP 10.1.10.199.49245 > 10.1.10.20.http: Flags [F.], seq 285, ack 207, win 16373, length 0 in slot1/tmm1 lis=/Common/http_vs
-06:03:50.345045 IP 10.1.10.20.http > 10.1.10.199.49245: Flags [.], ack 286, win 237, length 0 out slot1/tmm1 lis=/Common/http_vs
+tcpdump -ni external host 10.1.10.20
 ----
 
 [source, bash]
 .*5. check the tcp status from backend server*
 ----
 $ netstat -antulop | grep 8081
-(Not all processes could be identified, non-owned process info
- will not be shown, you would have to be root to see it all.)
-tcp6       0      0 :::8081                 :::*                    LISTEN      -                off (0.00/0/0)
-tcp6       0      0 10.1.20.12:8081         10.1.10.199:4650        TIME_WAIT   -                timewait (33.76/0/0)
-tcp6       0      0 10.1.20.12:8081         10.1.10.199:10177       TIME_WAIT   -                timewait (33.54/0/0)
 ----
 
 [source, bash]
@@ -85,64 +56,156 @@ tmsh delete ltm virtual http_vs
 tmsh delete ltm pool http_pool 
 ----
 
-== NAT
+== SNAT & NAT
+
+=== NAT
+
+image:img/snat-nat.png[]
+
+如上图，客户端想直接访问 BIG-IP 保护的内部网络上节点10.1.20.13（BIG-IP 网络可以配置内网和外网，外网和 internet 互联，内网是私有地址）,
+
+* NAT 可以在 BIG-IP 外网端配置一个和内网地址的映射，就可以允许 Client 端访问 10.1.20.13 上所有的服务
+* NAT 是双向的，内部网节点也可以访问 Client 端的服务。
 
 [source, bash]
-.**
+.*1. Create NAT mapping*
 ----
-
-----
-
-[source, bash]
-.**
-----
-
-----
-
-[source, bash]
-.**
-----
-
+tmsh create ltm nat custom_nat originating-address 10.1.20.13 translation-address 10.1.10.200
 ----
 
 [source, bash]
-.**
+.*2. tcpdump monitor external interface and host*
 ----
-
-----
-
-[source, bash]
-.**
-----
-
+tcpdump -ni external host 10.1.10.200
 ----
 
 [source, bash]
-.**
+.*3. Access the web server*
 ----
-
-----
-
-[source, bash]
-.**
-----
-
+curl -i http://10.1.10.200/hello
 ----
 
 [source, bash]
-.**
+.*4. Clean up*
+----
+tmsh delete ltm nat custom_nat 
 ----
 
+=== SNAT
+
+和 NAT 不同，SNAT 没有监听客户端的请求，不是将内部私有地址映射为公有地址，而是将公有地址段映射为一个内部地址。
+
+image:img/snat-snat.png[] 
+
+如上示例中 VS 监听 10.1.10.20:80，Client 访问 http://10.1.10.20，10.1.20.13 最终接收到请求，而在 10.1.20.13 上查看：
+
+* Client IP address/port: *10.1.20.201:61867*
+* Pool member address/port: *10.1.20.13:80*
+* Virtual server address: *10.1.10.20*
+
+如上 Client 访问 http://10.1.10.20 并返回结果的具体过程：
+
+1. Client 发送请求到 VS （SRC：74.120.252.18:56342，DEST: 10.1.10.20:80）
+2. BIG-IP 接收到请求后修改 SRC 地址为 SNAT 地址 10.1.20.210，DEST 地址为 pool member 地址(10.1.20.13)
+3. pool member 发送返回请求到 BIG-IP（SRC：10.1.20.13，DEST: 10.1.20.210）
+4. BIG-IP 修改 SRC 为 VS 地址 10.1.10.20，DEST 地址为 74.120.252.18
+
+[source, bash]
+.*1. Setup*
+----
+tmsh create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
+tmsh create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool
+tmsh create ltm snat custom_snat origins add { 10.1.10.0/24 } translation 10.1.20.201
 ----
 
 [source, bash]
-.**
+.*2. tcpdump monitor interfaces*
 ----
-
+tcpdump -ni internal host 10.1.20.201
+tcpdump -ni external host 10.1.10.20
 ----
 
 [source, bash]
-.**
+.*3. access the app*
+----
+curl http://10.1.10.20/hello
 ----
 
+[source, bash]
+.*4. Clean up*
+----
+tmsh delete ltm virtual http_vs 
+tmsh delete ltm pool http_pool 
+tmsh delete ltm snat custom_snat 
+----
+
+=== SNAT Pool
+
+与 SNAT 原理一致，SNAT Pool 里可包括多个 Translation 地址，SNAT Pool 主要解决的问题是支持最大连接数的问题，一个 IP 地址，最多可对应 65535 个端口，如果并发超过了这个值，则会造成阻塞，如果多个 Translation 地址则在几何倍数上增加了最大连接数，一定程度上解决了此问题。
+
+[source, bash]
+.*1. Set up*
+----
+tmsh create ltm snatpool custom_snatpool members add { 10.1.20.222 10.1.20.223 10.1.20.224 } 
+tmsh create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
+tmsh create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool source-address-translation { pool custom_snatpool type snat } 
+----
+
+[source, bash]
+.*2. tcpdump monitor interfaces*
+----
+tcpdump -ni internal host 10.1.20.11 or 10.1.20.12
+tcpdump -ni external host 10.1.10.20
+----
+
+[source, bash]
+.*3. access the app*
+----
+curl http://10.1.10.20/hello
+----
+
+[source, bash]
+.*4. Check the collected info*
+----
+// 1. external inerface
+# tcpdump -ni external host 10.1.10.20
+00:27:55.281949 IP 10.1.10.1.60949 > 10.1.10.20.http: Flags [SEW], seq 4061332314, win 65535, options [mss 1460,nop,wscale 6,nop,nop,TS val 1281255222 ecr 0,sackOK,eol], length 0 in slot1/tmm1 lis=
+
+// 2. internal interface
+# tcpdump -ni internal host 10.1.20.11 or 10.1.20.12
+00:27:55.281989 IP 10.1.20.222.19175 > 10.1.20.11.tproxy: Flags [SEW], seq 4061332314, win 65535, options [mss 1460,nop,wscale 6,nop,nop,TS val 1281255222 ecr 0,sackOK,eol], length 0 out slot1/tmm1 lis=/Common/http_vs
+
+// 3. the TCP TIME_WAIT from app server
+$ netstat -antulop | grep 8081
+tcp6       0      0 10.1.20.11:8081         10.1.20.222:19175       TIME_WAIT   -                timewait (58.15/0/0)
+----
+
+[source, bash]
+.*5. Clean up *
+----
+tmsh delete ltm virtual http_vs
+tmsh delete ltm pool http_pool
+tmsh delete ltm snatpool custom_snatpool
+----
+
+=== 内外访问外网
+
+SNAT 可以配置内网访问外网，如果内网访问外网，则将 origins 配置为内网网段，将 translation 配置为外网地址.
+
+[source, bash]
+.*1. Setup*
+----
+tmsh create ltm snat internet_access origins add { 10.1.20.0/24 } translation 10.1.10.100
+----
+
+[source, bash]
+.*2. Test access external http service*
+----
+curl http://10.1.10.20/
+----
+
+[source, bash]
+.*3. Clean up*
+----
+tmsh delete ltm snat internet_access
 ----

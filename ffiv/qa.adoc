@@ -5,3 +5,21 @@
 
 1. In routed mode, due to the full proxy architecture, there should be a connection between BIG-IP and backend server, why check from backend server, the source is Client, rather than Big-IP(`10.1.20.12:8081         10.1.10.199:10177`)?
 2. Still in routed mode, the full proxy, there are 2 connections(Client to BIG-IP, BIG-IP to Server), how the infors exchanged between these two connections? 
+3. Why external gateway can be used to access the Configure Utility UI? 
+4. Is VE/BIG-IP default only allow 3 network(mgmt, external, internal)? check from both tmsh and from linux, there only 3 interface defined.
+
+== VS
+
+1. 最常用的 VS Type 是 Standard？其他类型客户使用多吗？
+
+== Persistence
+
+1. Why the `ui.statistics.modulestatistics.localtraffic.persistencerecords` default is false?
+2. Is there a DB used to persist large volume of persistence records?
+
+== Other
+
+1. BIG-IP 高可用有没有一个盒子里两套软件做两个点当一个点不可用，切换到另一个点？（之前听说的）
+2. What the means of 1SLOT(BIGIP-14.1.2.3-0.0.5.ALL_1SLOT-vmware.ova) flag means in VE download file? what's the difference bewteen BIGIP-14.1.2.3-0.0.5.ALL_1SLOT-vmware.ova and BIGIP-14.1.2.3-0.0.5.ALL-vmware.ova?
+
+

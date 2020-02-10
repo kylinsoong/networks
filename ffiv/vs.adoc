@@ -1,0 +1,107 @@
+= Virtual Server
+:toc: manual
+
+== Inbound Traffic Handling
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|Self IPs
+|Use external self IP can access Configuration Utility UI
+
+|SNATs
+|
+[source, bash]
+----
+// vs is running
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
+create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool
+
+// move 10.1.10.0 to 10.1.20.201
+create ltm snat custom_snat origins add { 10.1.10.0/24 } translation 10.1.20.201
+
+// make request
+curl http://10.1.10.20/hello
+
+// check the connections
+# tcpdump -ni external host 10.1.10.20
+00:01:30.871791 IP 10.1.10.1.59532 > 10.1.10.20.http: Flags [SEW], ...
+# tcpdump -ni internal host 10.1.20.201
+00:02:59.684393 IP 10.1.20.201.35520 > 10.1.20.11.tproxy ...
+
+// clean up
+delete ltm virtual http_vs
+delete ltm pool http_pool
+delete ltm snat custom_snat
+----
+
+|NAT
+|
+[source, bash]
+----
+// create nat
+create ltm nat custom_nat originating-address 10.1.20.13 translation-address 10.1.10.100
+
+// make request
+curl http://10.1.10.100/hello
+
+// check the connections
+# tcpdump -ni external host 10.1.10.100
+00:11:43.652881 IP 10.1.10.1.60139 > 10.1.10.100.http: Flags [SEW], ...
+# tcpdump -ni internal host 10.1.20.13 
+00:13:05.685271 IP 10.1.10.1.60216 > 10.1.20.13.http ...
+
+// clean up
+delete ltm nat custom_nat
+----
+
+|Virtual Servers
+|
+[source, bash]
+----
+// create VS
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
+create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool
+
+// make request
+curl http://10.1.10.20/hello
+
+// check connections
+# tcpdump -ni external host 10.1.10.20
+00:19:27.352896 IP 10.1.10.1.60544 > 10.1.10.20.http: ...
+# tcpdump -ni internal host 10.1.20.11 or 10.1.20.12
+00:21:17.840726 IP 10.1.10.1.35715 > 10.1.20.11.tproxy: ...
+
+// Clean up
+delete ltm virtual http_vs 
+delete ltm pool http_pool 
+____
+
+|===
+~      
+
+== Type
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|Standard
+|
+
+|Forwarding(IP)
+|
+[source, bash]
+----
+create ltm virtual forwarding_virtual destination 10.1.20.0:0 mask 255.255.255.0 ip-forward ip-protocol any
+----
+
+|Reject
+|
+[source, bash]
+----
+create ltm virtual reject_ssh_virtual destination 10.1.20.0:22 mask 255.255.255.0 reject ip-protocol tcp
+----
+
+|===

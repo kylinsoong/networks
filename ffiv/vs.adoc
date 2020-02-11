@@ -75,11 +75,9 @@ curl http://10.1.10.20/hello
 
 // Clean up
 delete ltm virtual http_vs 
-delete ltm pool http_pool 
-____
-
+delete ltm pool http_pool
+----
 |===
-~      
 
 == Type
 

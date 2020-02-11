@@ -8,9 +8,10 @@
 3. Why external gateway can be used to access the Configure Utility UI? 
 4. Is VE/BIG-IP default only allow 3 network(mgmt, external, internal)? check from both tmsh and from linux, there only 3 interface defined.
 
-== VS
+== VS & Load Balancer
 
 1. 最常用的 VS Type 是 Standard？其他类型客户使用多吗？
+2. 那个负载均衡策略使用的比较多？动态负载均衡策略安全吗（因为安装插件，从三方监控平台获取服务器指标数据）？
 
 == Persistence
 

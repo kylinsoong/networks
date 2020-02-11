@@ -1,4 +1,107 @@
 = Load Balancing
 :toc: manual
 
+负载均衡通常是基于连接的，负载均衡策略是一个算法或公式用来决定将流量转发到那个节点。常见的负载分配策略主要包含以下几种:
+
+1. *静态负载均衡算法* - 轮询，比率，优先权
+2. *动态负载均衡算法* - 最少连接数,最快响应速度，观察方法，预测法，动态性能分配
+3. *可编程控制的负载均衡策略* - 通过编程控制应用流量的导向
+
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|轮询算法(Round Robin)
+|
+* 默认负载均衡策略
+* 顺序循环将请求一次顺序循环地连接每个服务器。当其中某个服务器发 生第二到第 7 层的故障，则将其从顺序循环队列中拿出，不参加下一次的轮询，直到其恢复正常。
+
+NOTE: 轮询算法通常用于比较简单的情况，有时，在大流量和大量新建连接时，也采用轮 询算法保证服务器接收请求的平均性，避免动态算法的计算间隔带来的单台服务器 压力过大的问题。
+
+[source, bash]
+.*示例*
+----
+// create vs and pool
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } } 
+create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool
+
+// test Round Robin
+for i in {1..100} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+----
+
+|比率算法(Ratio (member) Ratio (node))
+|
+* 给每个服务器分配一个加权值为比例，根椐这个比例，把用户的请求分配到每个服务器。当其中某个服务器发生第二到第 7 层的故障，就把 其从服务器队列中拿出，不参加下一次的用户请求的分配, 直到其恢复正常。
+* 比率(Ratio) 可以设定在 pool member 或 node 上，如果设定在 pool member 上，则选择 Ratio (member) ，如果设定在 node 上则选择 Ratio (node)。
+
+NOTE: 比率算法通常用于在后台服务器的服务能力不均匀的情况下。可以手工指定每台服务器所接收的请求比率。实现负载的均衡性。
+
+[source, bash]
+.*示例 - Ratio (member)*
+----
+// set ratio
+modify ltm pool http_pool members modify { 10.1.20.11:tproxy { ratio 5 } 10.1.20.12:tproxy { ratio 2 } 10.1.20.13:tproxy { ratio 1 } } load-balancing-mode ratio-member
+
+// test Ratio (member)
+for i in {1..100} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+----
+
+[source, bash]
+.*示例 - Ratio (node)*
+----
+// update load balance mode
+modify ltm pool http_pool members replace-all-with { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } } load-balancing-mode ratio-node
+
+// set node ratio
+modify ltm node 10.1.20.11 ratio 5
+modify ltm node 10.1.20.12 ratio 2
+modify ltm node 10.1.20.13 ratio 1
+
+// test Ratio (node)
+for i in {1..100} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+
+// set back node ratio
+modify ltm node 10.1.20.11 ratio 1
+modify ltm node 10.1.20.12 ratio 1
+----
+
+|动态比率算法(Dynamic Ratio (member) Dynamic Ratio (node))
+|类似于比率算法，但比率是动态计算出，通常通过插件获取第三方监控平台服务器的性能等指标值。
+
+|最快相应速度(Fastest (node) Fastest (application))
+|通过观察每台服务器得应用响应速度，当有新的请求进入的时候， 将新的请求分配给响应最快的服务器。当其中某个服务器发生第二到第 7 层的故障， BIG-IP LTM 就把其从服务器队列中拿出，不参加下一次的用户请求的分配，直到其 恢复正常。
+
+|最小连接数(Least Connections (member) Least Connections (node))
+|
+* 每一台服务器的当前连接数进行统计，当有新的请求进入时，将 新的请求分配给当前最少连接处理的服务器。当其中某个服务器发生第二到第 7 层 的故障，就把其从服务器队列中拿出，不参加下一次的用户请求的分配, 直到其恢复正常。
+* 最小连接数为最常用的负载均衡算法之一，在后台服务器处理能力均等的情况下， 使用最小连接数可以得到最为平衡的负载均衡效果。
+
+|加权最小连接数(Weighted Least Connections (member) Weighted Least Connections (node))
+|
+* 类似最小连接数，主要处理后端服务器性能不均的情况，例如 Server 1 上有 20 个连接且最大连接数为 100，Server 2 上有 30 个连接且支持最大连接数为 200，那么该算法会将请求分发到 Server 2。
+* 该算法需要所有 pool member 设定 connection limit 气人大小大于 0。
+
+|动态性能分配(Observed (member) Observed (node)) 
+|
+* 由负载均衡设备收集到的应用程序和应用服务器的各项性能参数如 CPU 占用率，内 存占用率、当前并发用户数等关键信息，并可进行加权处理。当有新的请求进入的 时候，将新的请求分配给综合性能最佳的服务器。
+* 观察一段时间内的L4连接，并产生比率
+
+|(预知型动态性能分配Predictive (member) Predictive (node)) 
+|与动态性能分配类似，但增加了动态发现服务型性能变化的能力，例如当服务器性能增加了后悔重新调整比率
+
+|Least Sessions 
+|
+* 与 persistence table 中的实体个数相关联计算分发策略
+* 不支持 cookie persistence
+
+|Ratio Least Connections
+|根据每一个 pool member 上 active 的连接数最小原则优先分配分发策略
+
+|Ratio (session)
+|
+
+|Ignore Persisted Weight option
+| 
+|===
 

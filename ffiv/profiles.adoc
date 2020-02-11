@@ -1,0 +1,99 @@
+= Virtual Server Profiles
+:toc: manual
+
+Profiles 是一组配置工具帮助管理应用负载，通过一个 Profile 会关联到一个 VS，工具 Profile 上配置的参数控制 VS 接收到的应用负载。
+
+== Persistence
+
+Persistence Profile 既常说的会话保持，既当负载均衡策略为一个请求选择了一个节点，则后续的请求发送到同一个节点。
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|Source Address Affinity
+|根据客户端的网络进行 Persistence 配置
+
+[source, bash]
+.*示例*
+----
+// create persistence profile
+create ltm persistence source-addr custom_source_address timeout 45 mask 255.255.255.0
+
+// relate the persistence to a VS
+modify ltm virtual http_vs persist replace-all-with { custom_source_address { default yes } } 
+
+// test
+for i in {1..10} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+
+// check persistence records
+show ltm persistence persist-records 
+
+// remove the reference
+modify ltm virtual http_vs persist none 
+----
+
+|Cookie
+|Cookie 的好处是不需要在负载均衡设备上记录 persistence records，Cookie Profile 依赖 HTTP Profile
+
+[source, bash]
+.*示例*
+----
+// create a cookie profile
+create ltm persistence cookie custom_cookie cookie-name "demo_cookie" expiration "1:0:0"
+
+// relate to VS
+modify ltm virtual http_vs profiles add { http { } } persist replace-all-with { custom_cookie { default yes } }
+
+// test with broswer http://10.1.10.20
+----
+
+|===
+
+== Acceleration
+
+Acceleration Profile 从协议的调度对应用网络中 Packet 进行定制，以达到性能最大。
+
+TCP 加速（TCP Express™）主要解决 TCP 通信中客户端响应慢（网路延迟、丢包等），服务器端比较限制，带宽利用率低的问题。基于全代理的架构，TCP 加速主要从两个方面，调节、定制不同的客户端和服务器端协议参数来实现，具体客户端 TCP 优化包括：
+
+1. 调节 congestion windows
+2. 快速重传
+3. 选择性的 ACK
+4. 调节 Congestion notification
+
+服务器端 TCP 优化包括：
+
+1. Content Buffering - Content spooling
+2. Connection Management - OneConnect
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|tcp-lan-optimized/tcp-wan-optimized
+|常见的 TCP 优化方式，将客户端设定为 tcp-wan-optimized，服务器端设定为 tcp-lan-optimized。
+
+[source, bash]
+.*示例*
+----
+modify ltm virtual http_vs profiles replace-all-with { http { } tcp-wan-optimized { context clientside } tcp-lan-optimized { context serverside } } 
+----
+
+|OneConnect
+|全代理架构下，将服务器端的连接重复领用，以达到增加服务器出了能力的作用，官方数据显示可以增加 30% 的服务器处理能力
+
+[source, bash]
+.*示例*
+----
+// modify to use the vs to use OneConnect
+modify ltm virtual http_vs profiles replace-all-with { http { } oneconnect { } tcp-wan-optimized { context clientside } tcp-lan-optimized { context serverside } }
+
+// send 100 requests
+reset-stats ltm pool http_pool 
+for i in {1..100} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+
+// check the tranfic
+show ltm pool http_pool | grep Total Connections 
+----
+|===
+

@@ -10,13 +10,15 @@
 
 == VS & Load Balancer
 
-1. 最常用的 VS Type 是 Standard？其他类型客户使用多吗？
+1. 最常用的 VS Type 是 Standard？其他类型客户使用多吗？What's the purpose of *Performance(Layer 4)*, client protocal fastL4? also if select fastL4 the cookie persistence not take effect? the tmsh cli create vs default is fastL4(if do not append with ip-protocol tcp).
 2. 那个负载均衡策略使用的比较多？动态负载均衡策略安全吗（因为安装插件，从三方监控平台获取服务器指标数据）？
 
-== Persistence
+== Profiles
 
 1. Why the `ui.statistics.modulestatistics.localtraffic.persistencerecords` default is false?
 2. Is there a DB used to persist large volume of persistence records?
+3. 客户真实使用中，对 TCP 加速相关的 Profile 使用广泛吗(tcp-lan-optimized, tcp-wan-optimized)？
+4. Does OneConnect only can reuse server side connection from a same client(curl not success)?
 
 == Other
 

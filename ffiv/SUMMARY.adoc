@@ -4,4 +4,6 @@
 . link:networking.adoc[Networking the BIG-IP]
 . link:vs.adoc[Virtual Servers] 
 . link:lb.adoc[Load Balancing]
+. link:monitor.adoc[Monitor]
+. link:profiles.adoc[Virtual Server Profiles]
 . link:qa.adoc[Q & A]

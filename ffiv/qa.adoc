@@ -7,6 +7,7 @@
 2. Still in routed mode, the full proxy, there are 2 connections(Client to BIG-IP, BIG-IP to Server), how the infors exchanged between these two connections? 
 3. Why external gateway can be used to access the Configure Utility UI? 
 4. Is VE/BIG-IP default only allow 3 network(mgmt, external, internal)? check from both tmsh and from linux, there only 3 interface defined.
+5. 关于内网访问外网，使用 NAT 可以配置通吗(NAT 的原理是将内网地址(originating-address) 映射到外网(translation-address)，从文档看到 NAT 可以是双向的，但我没有配通，SNAT 可以通)？
 
 == VS & Load Balancer
 
@@ -18,7 +19,10 @@
 1. Why the `ui.statistics.modulestatistics.localtraffic.persistencerecords` default is false?
 2. Is there a DB used to persist large volume of persistence records?
 3. 客户真实使用中，对 TCP 加速相关的 Profile 使用广泛吗(tcp-lan-optimized, tcp-wan-optimized)？
-4. Does OneConnect only can reuse server side connection from a same client(curl not success)?
+4. Why OneConnect profile depend on web-acceleration profile(it seems optimized-acceleration enabled reuse the server side connection)? 
+5. Is there any benefit for using Stream Profile with HTTP Compression Profile(Stream Profile can work without http compression profile)?  
+6. Does HTTP Compression depend on web-acceleration profile(Is http compresstion made data transfer from client to BIG-IP and BIG-IP to server small?)?
+7. Does web-acceleration profile related with HTTP Compression?
 
 == Other
 

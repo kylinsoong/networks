@@ -54,6 +54,8 @@ modify ltm virtual http_vs profiles add { http { } } persist replace-all-with { 
 
 Acceleration Profile 从协议的调度对应用网络中 Packet 进行定制，以达到性能最大。
 
+HTTP Profile 主要添加或修改 HTTP 协议中请求和返回参数，以达到灵活控制 HTTP 流量的作用。
+
 TCP 加速（TCP Express™）主要解决 TCP 通信中客户端响应慢（网路延迟、丢包等），服务器端比较限制，带宽利用率低的问题。基于全代理的架构，TCP 加速主要从两个方面，调节、定制不同的客户端和服务器端协议参数来实现，具体客户端 TCP 优化包括：
 
 1. 调节 congestion windows
@@ -70,6 +72,57 @@ TCP 加速（TCP Express™）主要解决 TCP 通信中客户端响应慢（网
 |===
 |Name |Description
 
+|HTTP Profile
+|HTTP Profile 主要设定 HTTP Fallback 地址（当目的 pool 不可达是将流量导入到一个新的地址）；给 HTTP 请求的 Header 中添加一个参数；控制 HTTP 返回中允许的参数；添加 X-Forwarded-For 等。
+
+[source, bash]
+.*示例*
+----
+// create pool and vs
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } } monitor custom_http_monitor 
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
+
+// check the http request headers and response headers from broswer
+http://10.1.10.20/headers.php
+
+// define http profile
+create ltm profile http custom_http_profile fallback-host http://ksoong.org fallback-status-codes add { 404 } header-erase User-Agent header-insert TESTER:"Kylin SONG, MacBook Pro" insert-xforwarded-for enabled response-headers-permitted add { Date Content-Length } 
+
+// relate the http profile to vs
+modify ltm virtual http_vs profiles add { custom_http_profile {} }
+
+// check the headers from broswer
+http://10.1.10.20/headers.php
+----
+
+NOTE: HTTP profile 通常只能添加或移除一个参数，如果想操作多个参数则需要 iRules 或 Policy。
+
+|Stream Profile
+|
+
+* Stream Profile 将 HTTP 请求流中的字符串替换
+
+[source, bash]
+.*示例*
+----
+// create stream profile
+create ltm profile stream custom_stream source "10.66.192.44" target "10.66.196.67"
+
+// related the stream profile with vs
+modify ltm virtual http_vs profiles add { custom_stream { } } 
+
+// check the result
+$ curl http://10.1.10.20/teststream
+server addr 10.66.196.67, request send to 10.66.196.67
+
+// remove the reference fo stream profile from VS
+modify ltm virtual http_vs profiles delete { custom_stream } 
+
+// check result again
+$ curl http://10.1.10.20/teststream
+server addr 10.66.192.44, request send to 10.66.192.44
+----
+
 |tcp-lan-optimized/tcp-wan-optimized
 |常见的 TCP 优化方式，将客户端设定为 tcp-wan-optimized，服务器端设定为 tcp-lan-optimized。
 
@@ -85,15 +138,71 @@ modify ltm virtual http_vs profiles replace-all-with { http { } tcp-wan-optimize
 [source, bash]
 .*示例*
 ----
-// modify to use the vs to use OneConnect
-modify ltm virtual http_vs profiles replace-all-with { http { } oneconnect { } tcp-wan-optimized { context clientside } tcp-lan-optimized { context serverside } }
+// set up vs and pool
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } } monitor custom_http_monitor
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
 
-// send 100 requests
-reset-stats ltm pool http_pool 
-for i in {1..100} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+// set up another vs and pool
+create ltm pool http_pool2 members add { 10.1.20.11:80 { address 10.1.20.11 } 10.1.20.12:80 { address 10.1.20.12 } 10.1.20.13:80 { address 10.1.20.13 } } monitor custom_http_monitor
+create ltm profile one-connect custom_oneconnect max-size 200 max-age 86400
+create ltm profile web-acceleration custom_acceleration defaults-from optimized-acceleration cache-size 200
+create ltm virtual http_vs2 destination 10.1.10.21:80 ip-protocol tcp profiles add { http { } custom_acceleration { } custom_oneconnect { } } pool http_pool2
 
-// check the tranfic
-show ltm pool http_pool | grep Total Connections 
+// send test requests to both vs
+for i in {1..100} ; do curl http://10.1.10.21/hello ; done
+for i in {1..100} ; do curl http://10.1.10.20/hello ; done
+
+// check the connections created
+# show ltm pool http_pool | grep "Total Connections "
+  Total Connections                                               100
+show ltm pool http2_pool | grep "Total Connections "
+  Total Connections                                                 1
 ----
+
+|HTTP Compression
+|对 HTTP 传输的文本进行压缩
+
+[source, bash]
+.*示例*
+----
+// create http compression profile
+create ltm profile http-compression custom_compression defaults-from wan-optimized-compression min-size 10 gzip-level 6
+
+// relate with vs
+modify ltm virtual http_vs2 profiles replace-all-with { http { } custom_acceleration { } custom_compression { } }
+
+// reset stats
+reset-stats ltm virtual http_vs
+reset-stats ltm virtual http_vs2
+reset-stats ltm pool http_pool
+reset-stats ltm pool http_pool2
+
+// send test request to both vs
+for i in {1..10} ; do curl http://10.1.10.21/c.txt ; done
+for i in {1..10} ; do curl http://10.1.10.20/c.txt ; done
+
+// check stats(both bits in and out, packets in and out
+show ltm pool http_pool ; show ltm pool http_pool2 
+----
+
+|RAM Cache
+|RAM Cache 可以将静态内容缓存到内存
+
+.*示例*
+----
+// create ram cache
+create ltm profile web-acceleration custom_caching defaults-from optimized-caching cache-size 100
+
+// relate to vs
+modify ltm virtual http_vs2 profiles replace-all-with { http { } custom_caching { } } 
+
+// send test request to both vs
+for i in {1..25} ; do curl http://10.1.10.21/c.txt ; done
+for i in {1..25} ; do curl http://10.1.10.20/c.txt ; done
+
+// check stats(both bits in and out, packets in and out, the pool2 is 1/25 of pool)
+show ltm pool http_pool ; show ltm pool http_pool2 
+----
+
 |===
 

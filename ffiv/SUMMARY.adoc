@@ -6,4 +6,5 @@
 . link:lb.adoc[Load Balancing]
 . link:monitor.adoc[Monitor]
 . link:profiles.adoc[Virtual Server Profiles]
+. link:security.adoc[Security]
 . link:qa.adoc[Q & A]

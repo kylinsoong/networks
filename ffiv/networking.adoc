@@ -209,3 +209,26 @@ curl http://10.1.10.20/
 ----
 tmsh delete ltm snat internet_access
 ----
+
+== 用例
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|SSH 到内网
+|需要在外部网络穿透 SSH 连接到内部某台服务器
+
+[source, bash]
+----
+// create nat
+create ltm nat ssh_nat originating-address 10.1.20.14 translation-address 10.1.10.100 
+
+// ssh
+ssh root@10.1.10.100
+
+// clean up
+delete ltm nat ssh_nat 
+----
+
+|===

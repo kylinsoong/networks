@@ -206,3 +206,45 @@ show ltm pool http_pool ; show ltm pool http_pool2
 
 |===
 
+== Security
+
+[cols="2,5a"]
+|===
+|Name |Description
+
+|Client SSL Profile
+|加密 HTTP 通信
+
+.*示例*
+----
+// create self-signed certificate
+create sys crypto key custom_ssl_cert key-size 2048 gen-certificate country CN city Beijing state BJ organization 'F5, Inc' ou SE common-name www.f5demo.com email-address k.song@f5.com lifetime 3650
+
+// create a Client SSL Profile
+create ltm profile client-ssl custom_client_ssl cert custom_ssl_cert key custom_ssl_cert 
+
+// create vs
+create ltm monitor https custom_https_monitor interval 8 timeout 25 recv "FSE vLab Test Web Site" send "GET /index.php\r\n"
+create ltm pool https_pool members add { 10.1.20.11:443 { address 10.1.20.11 } 10.1.20.12:443 { address 10.1.20.12 } 10.1.20.13:443 { address 10.1.20.13 } } monitor custom_https_monitor
+create ltm virtual https_virtual destination 10.1.10.30:443 ip-protocol tcp profiles add { tcp { } } pool https_pool
+
+// test
+https://10.1.10.30
+
+// update add persistence cookie
+modify ltm virtual https_virtual profiles add { http { } } persist replace-all-with { custom_cookie } 
+
+// test agasin(should be failed)
+https://10.1.10.30
+
+// use client ssl profile
+modify ltm virtual https_virtual profiles add { custom_client_ssl { context clientside } serverssl { context serverside } } 
+
+// test
+https://10.1.10.30
+----
+
+|SSL Offload
+|SSL Offload 可以降低对服务器端计算资源的消耗
+
+|===

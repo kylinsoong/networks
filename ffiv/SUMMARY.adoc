@@ -1,6 +1,7 @@
 = Summary
   
 . link:README.adoc[INTRODUCTION]
+. link:admin.adoc[基本管理]
 . link:networking.adoc[Networking the BIG-IP]
 . link:vs.adoc[Virtual Servers] 
 . link:lb.adoc[Load Balancing]

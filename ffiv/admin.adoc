@@ -1,0 +1,291 @@
+= 基本管理
+:toc: manual
+
+== 基本管理命令
+
+=== 查看物理内存大小
+
+[source, text]
+----
+# physmem 
+8388608
+----
+
+=== 查看内存分配情况
+
+[source, text]
+----
+# tmsh show sys memory
+
+Sys::System Memory Information
+-----------------------------------------------------------------
+Memory Used(%)     Current  Average  Max(since 02/12/20 23:08:44)
+-----------------------------------------------------------------
+TMM Memory Used          4        4                             4
+Other Memory Used       74       74                            75
+Swap Used               37       37                            37
+
+------------------------
+Sys::Host Memory (bytes)
+------------------------
+TMM: 0  
+  Total     6.1G
+  Used    224.2M
+  Free      5.9G
+Other: 0
+  Total     1.6G
+  Used      1.2G
+  Free    427.2M
+Total: 0
+  Total     7.7G
+  Used      1.4G
+  Free      6.3G
+Swap: 0 
+  Total   999.9M
+  Used    372.4M
+  Free    627.5M
+
+------------------------------------------------------------------------------
+Sys::SubSystem Memory          
+SubSystem                        Alloc (bytes)  Max Alloc (bytes)  Object Size
+------------------------------------------------------------------------------
+AAA_IVS_CTX                                  0                  0          448
+ADM Mitigation                               0                  0            1
+ADM Statistics                               0                  0            1
+...
+
+-----------------------
+Sys::TMM Memory (bytes)
+-----------------------
+TMM: 0.0
+  Total     6.1G
+  Used    224.2M
+----
+
+NOTE: TMM 是 TMOS 的核心进程，有自己独立的内存、CPU资源分配和 I/O 控制，所有的生产流量都通过 TMM 接收，一个 CPU Core 只能有一个 TMM 进程，
+
+=== 查看进程
+
+[source, text]
+.*1. 查看所有进程*
+----
+# bigstart status | wc -l
+102
+# bigstart status
+----
+
+[source, text]
+.*2. 查看运行进程*
+----
+# bigstart status | grep run | wc -l
+39
+# bigstart status | grep run        
+alertd       run (pid 7590) 8 hours
+big3d        run (pid 7972) 8 hours
+bigd         run (pid 23452) 6 hours, 2 restarts
+cbrd         run (pid 7968) 8 hours
+chmand       run (pid 5327) 8 hours
+csyncd       run (pid 7579) 8 hours
+devmgmtd     run (pid 7587) 8 hours
+dynconfd     run (pid 6201) 8 hours
+errdefsd     run (pid 7965) 8 hours
+eventd       run (pid 7582) 8 hours
+evrouted     run (pid 4951) 8 hours
+icr_eventd   run (pid 4204) 8 hours
+iprepd       run (pid 5323) 8 hours
+keymgmtd     run (pid 6211) 8 hours
+lacpd        run (pid 7044) 8 hours
+lind         run (pid 5792) 8 hours
+logstatd     run (pid 6634) 8 hours
+mcpd         run (pid 4196) 8 hours
+merged       run (pid 4202) 8 hours
+mgmt_acld    run (pid 5790) 8 hours
+named        run (pid 22960) 6 hours, 1 start
+ntlmconnpool run (pid 4466) 8 hours
+pccd         run (pid 4195) 8 hours
+restjavad    run (pid 23070) 6 hours, 1 start
+restnoded    run (pid 23069) 6 hours, 1 start
+scriptd      run (pid 7966) 8 hours
+sflow_agent  run (pid 5329) 8 hours
+snmpd        run (pid 7039) 8 hours
+sod          run (pid 7046) 8 hours
+statsd       run (pid 4463) 8 hours
+syscalld     run (pid 6208) 8 hours
+tamd         run (pid 5330) 8 hours
+tmipsecd     run (pid 8310) 8 hours
+tmm          run (pid 6635) 8 hours
+tmrouted     run (pid 7970) 8 hours
+tomcat       run (pid 7043) 8 hours
+vxland       run (pid 4477) 8 hours
+wccpd        run (pid 5797) 8 hours
+zxfrd        run (pid 5793) 8 hours
+----
+
+|===
+|进程名称 |说明
+
+|mcpd
+|负责协调不同的进程之间通信
+
+|big3d
+|GTM/Mpack通讯
+
+|bigd
+|本地健康检查
+
+|tamd
+|外部认证
+
+|tomcat
+|配置管理界面
+
+|tmm
+|业务数据处理
+|===
+
+[source, text]
+.*3. top 查看*
+----
+# top
+----
+
+=== 查看 CMP 工作状态
+
+[source, text]
+.*1. 查看 CMP 是否开启（0 为开启，1 为关闭）*
+----
+# tmsh list sys db provision.tmmcount
+sys db provision.tmmcount {
+    value "0"
+}
+----
+
+[source, text]
+.*2. 查看 CMP 是否开（show vs）*
+----
+# tmsh show ltm virtual all | grep CMP
+  CMP              : enabled   
+  CMP Mode         : all-cpus  
+----
+
+[source, text]
+.*3. 查看 TMM 信息*
+----
+# tmsh show sys tmm-info 
+
+---------------------------
+Sys::TMM: 0.0      
+---------------------------
+Global             
+  TMM Process Id       9961
+  Running TMM Id          0
+  TMM Count               1
+  CPU Id                  0
+                   
+Memory (bytes)     
+  Total                6.1G
+  Used               224.1M
+                   
+CPU Usage Ratio (%)
+  Last 5 Seconds          1
+  Last 1 Minute           1
+  Last 5 Minutes          1
+
+-------------------------
+Sys::TMM: 0.1      
+-------------------------
+Global             
+  TMM Process Id     9961
+  Running TMM Id        1
+  TMM Count             1
+  CPU Id                1
+                   
+Memory (bytes)     
+  Total                 0
+  Used                  0
+                   
+CPU Usage Ratio (%)
+  Last 5 Seconds        1
+  Last 1 Minute         1
+  Last 5 Minutes        1
+----
+
+[source, text]
+.*4. 查看 TMM 上流量*
+----
+ # tmsh show sys tmm-traffic
+
+-------------------------------------------------
+Sys::TMM: 0.0            
+-------------------------------------------------
+TMM Traffic                ClientSide  ServerSide
+  Bits In                      591.1K      591.1K
+  Bits Out                       1.0M        1.0M
+  Packets In                      358         358
+  Packets Out                     300         300
+  Current Connections               0           0
+  Maximum Connections               2           2
+  Evicted Connections               0           0
+  Slow Connections Killed           0           0
+  Total Connections                26          26
+  Total Requests                    0           -
+                         
+Errors                   
+  Maintenance Mode                  0
+  Virtual Addr Limit                0
+  Virtual Server Limit              0
+  Wrong Address                     0
+  No handler                       13
+  No Staged Handler                 0
+  No license                        0
+  Connection Memory                 0
+  Packets Dropped                   0
+  Packets In Errors                 0
+  Packets Out Errors                0
+Connections Redirected              0
+
+-------------------------------------------------
+Sys::TMM: 0.1            
+-------------------------------------------------
+TMM Traffic                ClientSide  ServerSide
+  Bits In                        1.3M        1.3M
+  Bits Out                       2.5M        2.5M
+  Packets In                     2.0K        2.0K
+  Packets Out                    1.7K        1.7K
+  Current Connections               2           2
+  Maximum Connections               5           5
+  Evicted Connections               0           0
+  Slow Connections Killed           0           0
+  Total Connections                25          25
+  Total Requests                    0           -
+                         
+Errors                   
+  Maintenance Mode                  0
+  Virtual Addr Limit                0
+  Virtual Server Limit              0
+  Wrong Address                     0
+  No handler                       17
+  No Staged Handler                 0
+  No license                        0
+  Connection Memory                 0
+  Packets Dropped                   0
+  Packets In Errors                 0
+  Packets Out Errors                0
+Connections Redirected              0
+----
+
+=== TD
+
+[source, text]
+.**
+----
+
+----
+
+[source, text]
+.**
+----
+
+----
+
+

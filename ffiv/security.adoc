@@ -1,2 +1,65 @@
 = Security
 :toc: manual
+
+== SYN cookie 保护
+
+[source, bash]
+.*1. 查看及修改 Global SYN Check Threshold 配置*
+----
+list ltm global-settings connection global-syn-challenge-threshold 
+ltm global-settings connection {
+    global-syn-challenge-threshold 64000
+}
+
+
+modify ltm global-settings connection global-syn-challenge-threshold 16000
+----
+
+[source, text]
+.*2. 查看及修改 Per Virtual Server SYN Check Threshold 配置*
+----
+list ltm global-settings connection default-vs-syn-challenge-threshold 
+ltm global-settings connection {
+    default-vs-syn-challenge-threshold infinite
+}
+
+modify ltm global-settings connection default-vs-syn-challenge-threshold 128
+----
+
+[source, text]
+.*3. TCP profile 配置 SYN Check*
+----
+# list ltm profile tcp tcp syn-cookie-whitelist 
+ltm profile tcp tcp {
+    syn-cookie-whitelist disabled
+}
+
+create ltm profile tcp syn_enable_tcp defaults-from tcp syn-cookie-whitelist enabled syn-cookie-enable enabled 
+----
+
+[source, text]
+.*4. 配置 VS*
+----
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp profiles add { syn_enable_tcp { } http { } } pool http_pool
+
+$ curl http://10.1.10.20/hello
+Hello World
+----
+
+[source, text]
+.*5. 模拟 SYN Floods*
+----
+java -jar target/syn-floods-0.0.1-SNAPSHOT.jar 10.1.10.20 80 150
+----
+
+[source, text]
+.**
+----
+
+----
+
+[source, text]
+.**
+----
+
+----

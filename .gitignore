@@ -1,5 +1,6 @@
 # Ignore .svn metadata files
 .svn
+.mvn
  
 #Ignore Maven generated target folders
 target

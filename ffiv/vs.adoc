@@ -189,15 +189,28 @@ NOTE: 和单纯的 TCP profile 关联的最大不同在于TMM必须等待到第�
 create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
 create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp profiles add { http { } } pool http_pool 
 
-// 2. test the service
-curl -i http://10.1.10.20/hello
+// 2. send 3 http request without send do GET method
+java -jar target/http-client-0.0.1-SNAPSHOT.jar 10.1.10.20 80
 
-// 3. Clean up
+// 3. check the connection table
+# show sys connection cs-server-addr 10.1.10.20
+Sys::Connections
+10.1.10.1:60077  10.1.10.20:80  any6.any  any6.any  tcp  48  (tmm: 1)  none  none
+10.1.10.1:60076  10.1.10.20:80  any6.any  any6.any  tcp  48  (tmm: 0)  none  none
+10.1.10.1:60075  10.1.10.20:80  any6.any  any6.any  tcp  48  (tmm: 0)  none  none
+Total records returned: 3
+
+// 4. check the established connection from backend server(there should be none) 
+# netstat -antulop | grep 8081
+tcp6       0      0 :::8081                 :::*                    LISTEN      2827/apache2     off (0.00/0/0)
+
+// 5. Clean up
 delete ltm virtual http_vs
 delete ltm pool http_pool
 ----
 
 === Performance (Layer 4)
+
 
 
 === Performance (HTTP)

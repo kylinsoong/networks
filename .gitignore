@@ -16,6 +16,9 @@ target
 *.iws
 /.idea
 
-_book
 war
 gwt-unitCache
+
+# gitbook
+node_modules
+_book

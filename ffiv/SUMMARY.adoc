@@ -1,6 +1,6 @@
 = Summary
   
-. link:README.adoc[INTRODUCTION]
+. link:README.adoc[Overview]
 . link:admin.adoc[基本管理]
 . link:networking.adoc[Networking the BIG-IP]
 . link:vs.adoc[Virtual Servers] 

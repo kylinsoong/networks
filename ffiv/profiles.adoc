@@ -7,12 +7,9 @@ Profiles 是一组配置工具帮助管理应用负载，通过一个 Profile �
 
 Persistence Profile 既常说的会话保持，既当负载均衡策略为一个请求选择了一个节点，则后续的请求发送到同一个节点。
 
-[cols="2,5a"]
-|===
-|Name |Description
+=== Source Address Affinity
 
-|Source Address Affinity
-|根据客户端的网络进行 Persistence 配置
+根据客户端的网络进行 Persistence 配置。
 
 [source, bash]
 .*示例*
@@ -56,8 +53,9 @@ delete ltm pool http_pool
 delete ltm persistence source-addr custom_source_address 
 ----
 
-|Cookie
-|Cookie 的好处是不需要在负载均衡设备上记录 persistence records，Cookie Profile 依赖 HTTP Profile
+=== Cookie
+
+Cookie 的好处是不需要在负载均衡设备上记录 persistence records，Cookie Profile 依赖 HTTP Profile。
 
 [source, bash]
 .*示例*
@@ -90,8 +88,6 @@ delete ltm pool http_pool
 delete ltm persistence cookie custom_cookie
 ----
 
-|===
-
 == Acceleration
 
 Acceleration Profile 从协议的调度对应用网络中 Packet 进行定制，以达到性能最大。
@@ -110,18 +106,15 @@ TCP 加速（TCP Express™）主要解决 TCP 通信中客户端响应慢（网
 1. Content Buffering - Content spooling
 2. Connection Management - OneConnect
 
-[cols="2,5a"]
-|===
-|Name |Description
+=== HTTP Profile
 
-|HTTP Profile
-|HTTP Profile 主要设定 HTTP Fallback 地址（当目的 pool 不可达是将流量导入到一个新的地址）；给 HTTP 请求的 Header 中添加一个参数；控制 HTTP 返回中允许的参数；添加 X-Forwarded-For 等。
+HTTP Profile 主要设定 HTTP Fallback 地址（当目的 pool 不可达是将流量导入到一个新的地址）；给 HTTP 请求的 Header 中添加一个参数；控制 HTTP 返回中允许的参数；添加 X-Forwarded-For 等。
 
 [source, bash]
 .*示例*
 ----
 // 1. create pool and vs
-create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }  
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
 create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
 
 // 2. check the http request headers and response headers
@@ -133,7 +126,7 @@ Response Headers: {accept-ranges=[bytes], connection=[close], content-length=[12
 Hello World
 
 // 3. define http profile
-create ltm profile http custom_http_profile fallback-host http://ksoong.org fallback-status-codes add { 404 } header-erase User-Agent header-insert TESTER:"Kylin SONG, MacBook Pro" insert-xforwarded-for enabled response-headers-permitted add { Date Content-Length } 
+create ltm profile http custom_http_profile fallback-host http://ksoong.org fallback-status-codes add { 404 } header-erase User-Agent header-insert TESTER:"Kylin SONG, MacBook Pro" insert-xforwarded-for enabled response-headers-permitted add { Date Content-Length }
 modify ltm virtual http_vs profiles add { custom_http_profile {} }
 
 // 4. check the http headers
@@ -147,36 +140,104 @@ Hello World
 // 5. clean up
 delete ltm virtual http_vs
 delete ltm pool http_pool
-delete ltm profile http custom_http_profile 
+delete ltm profile http custom_http_profile
 ----
 
 NOTE: HTTP profile 通常只能添加或移除一个参数，如果想操作多个参数则需要 iRules 或 Policy。
 
-|Stream Profile
-|
+=== Stream Profile
 
-* Stream Profile 将 HTTP 请求流中的字符串替换
+Stream Profile 将 HTTP 请求流中的字符串替换。
 
 [source, bash]
 .*示例*
 ----
-// create stream profile
+// 1. create pool and vs
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
+
+// 2. test request without stream profile
+$ curl http://10.1.10.20/teststream
+server addr 10.66.192.44, request send to 10.66.192.44
+
+// 3. create stream profile
 create ltm profile stream custom_stream source "10.66.192.44" target "10.66.196.67"
+modify ltm virtual http_vs profiles add { custom_stream { } }
 
-// related the stream profile with vs
-modify ltm virtual http_vs profiles add { custom_stream { } } 
-
-// check the result
+// 4. check the result
 $ curl http://10.1.10.20/teststream
 server addr 10.66.196.67, request send to 10.66.196.67
 
-// remove the reference fo stream profile from VS
-modify ltm virtual http_vs profiles delete { custom_stream } 
-
-// check result again
-$ curl http://10.1.10.20/teststream
-server addr 10.66.192.44, request send to 10.66.192.44
+// 5. clean up
+delete ltm virtual http_vs
+delete ltm pool http_pool
+delete ltm profile stream custom_stream 
 ----
+
+=== FastL4
+
+常见的参数：
+
+* *Reset on Timeout* - 指定系统在超过空闲过期时间后发送 reset 数据包
+* *Idel Timeout* - 多长时间连接里面没有数据流量的时候就删除连接表
+* *Loose Initiation* - 如果选定，意味着在建立连接时不需要首先接收到 SYN 包（三次握手第一次握手），通常和 *Loose Close* 一起使用
+* *Loose Close* - 如果选定，则意味着四次握手中，只握一次，只要收到 FIN 立即关闭连接，不进行后面的 FIN/ACK 及被动关闭
+
+[source, bash]
+.*示例*
+----
+// 1. create reset fastl4 profile and vs
+create ltm pool echo_pool members add { 10.1.20.11:8877 { address 10.1.20.11 } 10.1.20.12:8877 { address 10.1.20.12 } }
+create ltm profile fastl4 custom_fastl4_reset defaults-from fastL4 reset-on-timeout enabled idle-timeout 10
+create ltm virtual echo_vs destination 10.1.10.27:8877 ip-protocol tcp pool echo_pool profiles add { custom_fastl4_reset { } }
+
+// 2. tcp dump monitor both client side and server side
+tcpdump -nni external host 10.1.10.20
+tcpdump -nni internal host 10.1.20.11 or 10.1.20.12
+
+// 3. start echoclient establish connection to VS without send data
+./echoclient 10.1.10.27
+
+// 4. check the connection tables
+# show sys connection cs-server-addr 10.1.10.27
+Sys::Connections
+10.1.10.1:65379  10.1.10.27:8877  10.1.10.1:65379  10.1.20.11:8877  tcp  4  (tmm: 1)  none  none
+
+// 5. wait 10 seconds, then check the tcpdump on external vlan
+07:09:30.564326 IP 10.1.10.1.65379 > 10.1.10.27.8877: Flags [SEW], seq 2304926949, win 65535, options [mss 1460,nop,wscale 6,nop,nop,TS val 967206611 ecr 0,sackOK,eol], length 0 in slot1/tmm1 lis=
+07:09:30.565492 IP 10.1.10.27.8877 > 10.1.10.1.65379: Flags [S.E], seq 2017636917, ack 2304926950, win 28960, options [mss 1460,sackOK,TS val 5886343 ecr 967206611,nop,wscale 7], length 0 out slot1/tmm1 lis=/Common/echo_vs
+07:09:30.566002 IP 10.1.10.1.65379 > 10.1.10.27.8877: Flags [.], ack 1, win 2058, options [nop,nop,TS val 967206612 ecr 5886343], length 0 in slot1/tmm1 lis=/Common/echo_vs
+07:09:43.413431 IP 10.1.10.27.8877 > 10.1.10.1.65379: Flags [R.], seq 1, ack 1, win 0, length 0 out slot1/tmm1 lis=/Common/echo_vs
+
+// 6. wait 10 seconds, then check the tcpdump on external vlan
+07:09:30.564393 IP 10.1.10.1.65379 > 10.1.20.11.8877: Flags [SEW], seq 2304926949, win 65535, options [mss 1460,nop,wscale 6,nop,nop,TS val 967206611 ecr 0,sackOK,eol], length 0 out slot1/tmm1 lis=/Common/echo_vs
+07:09:30.565395 IP 10.1.20.11.8877 > 10.1.10.1.65379: Flags [S.E], seq 2017636917, ack 2304926950, win 28960, options [mss 1460,sackOK,TS val 5886343 ecr 967206611,nop,wscale 7], length 0 in slot1/tmm1 lis=/Common/echo_vs
+07:09:30.566099 IP 10.1.10.1.65379 > 10.1.20.11.8877: Flags [.], ack 1, win 2058, options [nop,nop,TS val 967206612 ecr 5886343], length 0 out slot1/tmm1 lis=/Common/echo_vs
+07:09:43.413410 IP 10.1.10.1.65379 > 10.1.20.11.8877: Flags [R.], seq 1, ack 1, win 0, length 0 out slot1/tmm1 lis=/Common/echo_vs
+
+// 7. Analysis the step 5 and 6, after 10 seconds, both server side and client side receive RST packet
+
+// 8. create a loose initiation close profile
+create ltm profile fastl4 custom_fastl4_loose defaults-from fastL4 loose-initialization enabled loose-close enabled 
+
+// 9. replace the profile on vs
+modify ltm virtual echo_vs profiles replace-all-with { custom_fastl4_loose { } } 
+
+// 10. test client, a active client, will close connection after 5 seconds
+java -jar target/tcp-clients-0.0.1-SNAPSHOT.jar --host 10.1.10.27 --active
+
+// 11. clean up
+delete ltm virtual echo_vs 
+delete ltm pool echo_pool 
+delete ltm profile fastl4 custom_fastl4_reset
+delete ltm profile fastl4 custom_fastl4_loose
+----
+
+=== TBD
+
+[cols="2,5a"]
+|===
+|Name |Description
 
 |tcp-lan-optimized/tcp-wan-optimized
 |常见的 TCP 优化方式，将客户端设定为 tcp-wan-optimized，服务器端设定为 tcp-lan-optimized。

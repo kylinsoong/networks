@@ -1,6 +1,10 @@
 = iRules
 
-A series of iRules which can direct add on F5 BIG-IP
+Rules 的处理必须依赖于 VS 对流量的接收，通过事件触发机制，Rules 可以控制流量在 VS 内部处理的整个过程。常见事件如下图：
+
+image:img/ltm-vs-rules.png[]
+
+NOTE: 大部分 rules 只在同一个 VS 之内有效，Rules 内创建的变量以连接为生命周期，一个VS上可以有多个 Rules，它们将被顺序执行。
 
 [cols="2,5a"]
 |===

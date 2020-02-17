@@ -1,17 +1,10 @@
 package com.example;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodySubscriber;
-import java.net.http.HttpResponse.ResponseInfo;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 import org.springframework.boot.CommandLineRunner;
@@ -29,49 +22,80 @@ public class HTTPTrafficDebugClients implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		
-		if(args.length < 2 ) {
-			System.out.println("Run with paramters: java -jar http-clients.jar <URI> <Times> <Threads>");
-			System.out.println("                    <URI> - HTTP request URL, eg, http://example.com/hello");
-			System.out.println("                    <Times> - The total clients in one threads");
-			System.out.println("                    <Threads> - The total threads will run the http call, this is opertional");
-			System.exit(0);
+		String uri = null;
+		int times = 1;
+		int threads = 1;
+		boolean cookie = false;
+		boolean print = false;
+		
+		for(int i = 0 ; i < args.length ; i++) {
+			
+			if(args[i].equals("--uri")) {
+				uri = args[++i];
+			} else if (args[i].equals("--times")) {
+				times = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("--threads")) {
+				threads = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("--cookie")) {
+				cookie = true;
+			} else if (args[i].equals("--print")) {
+				print = true;
+			}
 		}
 		
-		String uri = args[0];
-		int times = Integer.parseInt(args[1]);
-		int threads = 1;
-		if(args.length == 3) {
-			threads = Integer.parseInt(args[2]);
+		if(uri == null) {
+			System.out.println("request uri is necessary");
+			System.out.println("  java -jar http-clients.jar --uri <URI> --times <Times> --threads <Threads> --cookie --print");			
+			System.exit(0);
 		}
 		
 		if(threads > 1) {
 			//TODO-- handle multiple threads
 		} else {
 						
+			HttpHeaders headers = null;
+			
 			for(int i = 1 ; i <= times ; i ++) {
 				
 				HttpClient httpClient = HttpClient.newBuilder()
 			            .version(HttpClient.Version.HTTP_1_1)
 			            .build();
-				
-//				lists.add(httpClient);
-				
+								
 				HttpRequest request = HttpRequest.newBuilder()
 		                .GET()
 		                .uri(URI.create(uri))
-		                .setHeader("User-Agent", "Java 13 HttpClient Bot")
+		                .setHeader("User-Agent", "Bot")
 		                .build();
 				
-				HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+				if (cookie && headers != null) {
+					HttpRequest.Builder builder = HttpRequest.newBuilder().GET().uri(URI.create(uri));
+					headers.map().forEach((k, v) -> {
+						System.out.println(k + " -> " + v);
+					});
+				}
 				
-				System.out.println("request " + i + ", " + uri);
+				if(print) {
+					System.out.println("request " + i + ", " + uri);
+				}
+				
 				// short wait
 				Thread.sleep(100);
-				System.out.println(response);
-				System.out.println("Request Headers: " + response.request().headers());
-				System.out.println("Response Headers: " + response.headers());
+	
+				HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+				
+				headers = response.request().headers();
+				
+				if(print) {
+					System.out.println(response);
+					System.out.println("Request  Headers: " + headers.map());
+					System.out.println("Response Headers: " + response.headers().map());
+				}
+				
 				System.out.println(response.body());
-				System.out.println();
+				
+				if(print) {
+					System.out.println();
+				}
 			}
 			
 			

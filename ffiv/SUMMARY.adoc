@@ -8,4 +8,5 @@
 . link:monitor.adoc[Monitor]
 . link:profiles.adoc[Virtual Server Profiles]
 . link:security.adoc[Security]
+. link:iRules/README.adoc[iRules]
 . link:qa.adoc[Q & A]

@@ -17,20 +17,43 @@ Persistence Profile 既常说的会话保持，既当负载均衡策略为一个
 [source, bash]
 .*示例*
 ----
-// create persistence profile
+// 1. create persistence profile
 create ltm persistence source-addr custom_source_address timeout 45 mask 255.255.255.0
 
-// relate the persistence to a VS
+// 2. create vs
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool 
+
+// 3. test(there is no persistence, default round robin distribute traffic)
+$ for i in {1..6} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+10.1.20.11
+10.1.20.11
+10.1.20.12
+10.1.20.12
+10.1.20.13
+10.1.20.13
+
+// 4. relate the persistence to a VS
 modify ltm virtual http_vs persist replace-all-with { custom_source_address { default yes } } 
 
-// test
-for i in {1..10} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+// 5. test (persistence source address affinity enabled)
+for i in {1..6} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+10.1.20.11
+10.1.20.11
+10.1.20.11
+10.1.20.11
+10.1.20.11
+10.1.20.11
 
-// check persistence records
-show ltm persistence persist-records 
+// 6. check persistence records
+# show ltm persistence persist-records 
+Sys::Persistent Connections
+source-address  10.1.10.0  10.1.10.20:80  10.1.20.11:8081  (tmm: 0)
 
-// remove the reference
-modify ltm virtual http_vs persist none 
+// 7. clean up
+delete ltm virtual http_vs
+delete ltm pool http_pool 
+delete ltm persistence source-addr custom_source_address 
 ----
 
 |Cookie
@@ -39,13 +62,32 @@ modify ltm virtual http_vs persist none
 [source, bash]
 .*示例*
 ----
-// create a cookie profile
+// 1. create a cookie profile
 create ltm persistence cookie custom_cookie cookie-name "demo_cookie" expiration "1:0:0"
 
-// relate to VS
+// 2. create vs
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
+
+// 3. test(there is no persistence, default round robin distribute traffic)
+$ for i in {1..6} ; do curl http://10.1.10.20/server_addr.php ; echo "" ; done
+10.1.20.11
+10.1.20.11
+10.1.20.12
+10.1.20.12
+10.1.20.13
+10.1.20.13
+
+// 4. relate cookie persistence to VS
 modify ltm virtual http_vs profiles add { http { } } persist replace-all-with { custom_cookie { default yes } }
 
-// test with broswer http://10.1.10.20
+// 5. test the persistence(test the following url in broswer which support cookie)
+http://10.1.10.20/server_addr.php
+
+// 6. clean up
+delete ltm virtual http_vs
+delete ltm pool http_pool
+delete ltm persistence cookie custom_cookie
 ----
 
 |===
@@ -78,21 +120,34 @@ TCP 加速（TCP Express™）主要解决 TCP 通信中客户端响应慢（网
 [source, bash]
 .*示例*
 ----
-// create pool and vs
-create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } } monitor custom_http_monitor 
+// 1. create pool and vs
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }  
 create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
 
-// check the http request headers and response headers from broswer
-http://10.1.10.20/headers.php
+// 2. check the http request headers and response headers
+$ java -jar target/http-clients-0.0.1-SNAPSHOT.jar --uri "http://10.1.10.20/hello"  --print
+request 1, http://10.1.10.20/hello
+(GET http://10.1.10.20/hello) 200
+Request  Headers: {User-Agent=[Bot]}
+Response Headers: {accept-ranges=[bytes], connection=[close], content-length=[12], date=[Mon, 17 Feb 2020 08:04:31 GMT], etag=["c-59d8828df3517"], last-modified=[Sat, 01 Feb 2020 18:50:10 GMT], server=[Apache/2.4.7 (Ubuntu) PHP/5.5.9-1ubuntu4.12 OpenSSL/1.0.1f]}
+Hello World
 
-// define http profile
+// 3. define http profile
 create ltm profile http custom_http_profile fallback-host http://ksoong.org fallback-status-codes add { 404 } header-erase User-Agent header-insert TESTER:"Kylin SONG, MacBook Pro" insert-xforwarded-for enabled response-headers-permitted add { Date Content-Length } 
-
-// relate the http profile to vs
 modify ltm virtual http_vs profiles add { custom_http_profile {} }
 
-// check the headers from broswer
-http://10.1.10.20/headers.php
+// 4. check the http headers
+$ java -jar target/http-clients-0.0.1-SNAPSHOT.jar --uri "http://10.1.10.20/hello"  --print
+request 1, http://10.1.10.20/hello
+(GET http://10.1.10.20/hello) 200
+Request  Headers: {User-Agent=[Bot]}
+Response Headers: {connection=[close], content-length=[12], date=[Mon, 17 Feb 2020 08:07:33 GMT]}
+Hello World
+
+// 5. clean up
+delete ltm virtual http_vs
+delete ltm pool http_pool
+delete ltm profile http custom_http_profile 
 ----
 
 NOTE: HTTP profile 通常只能添加或移除一个参数，如果想操作多个参数则需要 iRules 或 Policy。

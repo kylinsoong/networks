@@ -1,142 +1,138 @@
 = Networking the Big-IP
 :toc: manual
 
-== Routed Mode 
+== 接入方法
+
+如下图所示，接入模式主要讨论的是位于外网的客户端如何和被负载均衡保护的内网中的服务器之间进行通信的问题。
+
+image:img/ltm-network-arch-onverview.png[]
+
+负载均衡是全代理架构，连接外部客户端一端处于外部 vlan，连接内部服务器的一端处于内部 vlan，如何跨网络进行服务器访问主要有两种方式：
+
+[cols="2,5a,5a"]
+|===
+|方式 |优点 |缺点
+
+|Routed Mode
+|
+* 网络拓扑简单
+* 易于调试
+* 安全 - BIG-IP 提供了额外的一个安全层，相当于防火墙，可以添加额外包过滤策略
+|
+* 可能需要创建一个新的网络或 vlan
+* 可能需要重新配置服务的默认网关
+* 外网要直连服务器需要额外的配置
+
+|SNAT Mode
+|
+* 服务器端的网络不需要改变
+* Easy option for quick proof of concept testing
+* OneConnect 可以更有效的聚合
+* 直连服务器不需要额外的配置
+|
+* 服务器看不到客户端的源地址
+* 允许直连，所以降低了安全
+
+|===
+
+=== Routed Mode 
+
+Routed Mode 为推荐的模式。
 
 [source, bash]
-.*1. Set up Routed mode - create http pool, http vs*
+.*示例*
 ----
-tmsh create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
-tmsh create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool
-----
+// 1. create vs
+create ltm pool sample_pool members add { 10.1.20.11:any { address 10.1.20.11 } 10.1.20.12:any { address 10.1.20.12 } }
+create ltm virtual sample_vs destination 10.1.10.22:any ip-protocol tcp pool sample_pool 
 
-[source, bash]
-.*2. How Routed Mode Works*
-----
-$ curl -i http://10.1.10.20/hello
-HTTP/1.1 200 OK
-Date: Thu, 06 Feb 2020 22:17:52 GMT
-Server: Apache/2.4.7 (Ubuntu) PHP/5.5.9-1ubuntu4.12 OpenSSL/1.0.1f
-Last-Modified: Sat, 01 Feb 2020 18:50:10 GMT
-ETag: "c-59d8828df3517"
-Accept-Ranges: bytes
-Content-Length: 12
-Connection: close
+// 2. test access the vs
+ssh root@10.1.10.22
 
-Hello World
-----
+// 3. check the connection table
+# show sys connection cs-server-addr 10.1.10.22
+Sys::Connections
+10.1.10.1:64902  10.1.10.22:22  10.1.10.1:64902  10.1.20.12:22  tcp  47  (tmm: 0)  none  none
 
-*3. Packes Flow*
-
-image:img/routed-mode-flow.png[]
-
-[source, txt]
-.*4. Catch the dump*
+// 4. clean up
+delete ltm virtual sample_vs 
+delete ltm pool sample_pool
 ----
-tcpdump -ni external host 10.1.10.20
-----
-
-[source, bash]
-.*5. check the tcp status from backend server*
-----
-$ netstat -antulop | grep 8081
-----
-
-[source, bash]
-.*6. Check the backend server gateway*
-----
-$ ip route | grep default
-default via 10.1.20.240 dev eth1  proto static
-----
-
-[source, bash]
-.*7. Clean up*
-----
-tmsh delete ltm virtual http_vs
-tmsh delete ltm pool http_pool 
-----
-
-== SNAT & NAT
 
 === NAT
 
-image:img/snat-nat.png[]
-
-如上图，客户端想直接访问 BIG-IP 保护的内部网络上节点10.1.20.13（BIG-IP 网络可以配置内网和外网，外网和 internet 互联，内网是私有地址）,
-
-* NAT 可以在 BIG-IP 外网端配置一个和内网地址的映射，就可以允许 Client 端访问 10.1.20.13 上所有的服务
+* NAT 可以在外网端配置一个和内网地址的映射，就可以允许 Client 端访问内网上的服务器
 * NAT 是双向的，内部网节点也可以访问 Client 端的服务。
 
 [source, bash]
-.*1. Create NAT mapping*
+.*示例*
 ----
-tmsh create ltm nat custom_nat originating-address 10.1.20.13 translation-address 10.1.10.200
-----
+// 1. create nat
+create ltm nat custom_nat originating-address 10.1.20.13 translation-address 10.1.10.200
 
-[source, bash]
-.*2. tcpdump monitor external interface and host*
-----
-tcpdump -ni external host 10.1.10.200
-----
+// 2. test access nat address
+ssh root@10.1.10.200
 
-[source, bash]
-.*3. Access the web server*
-----
-curl -i http://10.1.10.200/hello
-----
+// 3. check the connection table
+# show sys connection cs-server-addr 10.1.10.200
+Sys::Connections
+10.1.10.1:49337  10.1.10.200:22  10.1.10.1:49337  10.1.20.13:22  tcp  53  (tmm: 0)  none  none
 
-[source, bash]
-.*4. Clean up*
-----
-tmsh delete ltm nat custom_nat 
+// 4. clean up
+delete ltm nat custom_nat 
 ----
 
 === SNAT
 
 和 NAT 不同，SNAT 没有监听客户端的请求，不是将内部私有地址映射为公有地址，而是将公有地址段映射为一个内部地址。
 
-image:img/snat-snat.png[] 
-
-如上示例中 VS 监听 10.1.10.20:80，Client 访问 http://10.1.10.20，10.1.20.13 最终接收到请求，而在 10.1.20.13 上查看：
-
-* Client IP address/port: *10.1.20.201:61867*
-* Pool member address/port: *10.1.20.13:80*
-* Virtual server address: *10.1.10.20*
-
-如上 Client 访问 http://10.1.10.20 并返回结果的具体过程：
-
-1. Client 发送请求到 VS （SRC：74.120.252.18:56342，DEST: 10.1.10.20:80）
-2. BIG-IP 接收到请求后修改 SRC 地址为 SNAT 地址 10.1.20.210，DEST 地址为 pool member 地址(10.1.20.13)
-3. pool member 发送返回请求到 BIG-IP（SRC：10.1.20.13，DEST: 10.1.20.210）
-4. BIG-IP 修改 SRC 为 VS 地址 10.1.10.20，DEST 地址为 74.120.252.18
 
 [source, bash]
-.*1. Setup*
+.*示例*
 ----
-tmsh create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
-tmsh create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool
-tmsh create ltm snat custom_snat origins add { 10.1.10.0/24 } translation 10.1.20.201
+// 1. create vs
+create ltm pool sample_pool members add { 10.1.20.11:any { address 10.1.20.11 } 10.1.20.12:any { address 10.1.20.12 } }
+create ltm virtual sample_vs destination 10.1.10.22:any ip-protocol tcp pool sample_pool
+
+// 2. create snat
+create ltm snat custom_snat origins add { 10.1.10.0/24 } translation 10.1.20.201
+
+// 3. test access vs
+ssh root@10.1.10.22
+
+// 4. check the connection table
+# show sys connection cs-server-addr 10.1.10.22
+Sys::Connections
+10.1.10.1:49819  10.1.10.22:22  10.1.20.201:49819  10.1.20.11:22  tcp  2  (tmm: 1)  none  none
+
+// 5. clean up
+delete ltm snat custom_snat 
+delete ltm virtual sample_vs
+delete ltm pool sample_pool
 ----
 
-[source, bash]
-.*2. tcpdump monitor interfaces*
-----
-tcpdump -ni internal host 10.1.20.201
-tcpdump -ni external host 10.1.10.20
-----
+=== SNAT Automap 
+
+SNAT Automap 关联在一个 VS 上，使用 Self IP 作为 SNAT 地址。当一个VLAN上有多个SelfIP存在的时候，SNAT的源地址是在多个SelfIP之间轮询
 
 [source, bash]
-.*3. access the app*
+.*示例*
 ----
-curl http://10.1.10.20/hello
-----
+// 1. create vs
+create ltm pool sample_pool members add { 10.1.20.11:any { address 10.1.20.11 } 10.1.20.12:any { address 10.1.20.12 } }
+create ltm virtual sample_vs destination 10.1.10.22:any ip-protocol tcp pool sample_pool source-address-translation { type automap } 
 
-[source, bash]
-.*4. Clean up*
-----
-tmsh delete ltm virtual http_vs 
-tmsh delete ltm pool http_pool 
-tmsh delete ltm snat custom_snat 
+// 2. test access vs
+ssh root@10.1.10.22
+
+// 3. check connection table
+# show sys connection cs-server-addr 10.1.10.22
+Sys::Connections
+10.1.10.1:50569  10.1.10.22:22  10.1.20.240:50569  10.1.20.12:22  tcp  1  (tmm: 0)  none  none
+
+// 4. clean up
+delete ltm virtual sample_vs
+delete ltm pool sample_pool
 ----
 
 === SNAT Pool
@@ -144,98 +140,90 @@ tmsh delete ltm snat custom_snat
 与 SNAT 原理一致，SNAT Pool 里可包括多个 Translation 地址，SNAT Pool 主要解决的问题是支持最大连接数的问题，一个 IP 地址，最多可对应 65535 个端口，如果并发超过了这个值，则会造成阻塞，如果多个 Translation 地址则在几何倍数上增加了最大连接数，一定程度上解决了此问题。
 
 [source, bash]
-.*1. Set up*
+.*示例*
 ----
-tmsh create ltm snatpool custom_snatpool members add { 10.1.20.222 10.1.20.223 10.1.20.224 } 
-tmsh create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } }
-tmsh create ltm virtual http_vs destination 10.1.10.20:80 pool http_pool source-address-translation { pool custom_snatpool type snat } 
+// 1. create vs
+create ltm pool sample_pool members add { 10.1.20.11:any { address 10.1.20.11 } 10.1.20.12:any { address 10.1.20.12 } }
+create ltm snatpool custom_snatpool members add { 10.1.20.222 10.1.20.223 10.1.20.224 }
+create ltm virtual sample_vs destination 10.1.10.22:any ip-protocol tcp pool sample_pool source-address-translation { pool custom_snatpool type snat } 
+
+// 2. test access vs from multiple client
+ssh root@10.1.10.22
+ssh root@10.1.10.22
+
+// 3. check connection table
+# show sys connection cs-server-addr 10.1.10.22
+Sys::Connections
+10.1.10.1:51010  10.1.10.22:22  10.1.20.222:51010  10.1.20.11:22  tcp  63  (tmm: 0)  none  none
+10.1.10.1:51025  10.1.10.22:22  10.1.20.223:51025  10.1.20.12:22  tcp  54  (tmm: 0)  none  none
+
+// 4. clean up
+delete ltm virtual sample_vs
+delete ltm pool sample_pool
+delete ltm snatpool custom_snatpool
 ----
 
-[source, bash]
-.*2. tcpdump monitor interfaces*
-----
-tcpdump -ni internal host 10.1.20.11 or 10.1.20.12
-tcpdump -ni external host 10.1.10.20
-----
+=== 对比 SNAT/SNAT Automap/SNAT Pool
 
-[source, bash]
-.*3. access the app*
-----
-curl http://10.1.10.20/hello
-----
+|===
+|名称 |作用域 |映射关系
 
-[source, bash]
-.*4. Check the collected info*
-----
-// 1. external inerface
-# tcpdump -ni external host 10.1.10.20
-00:27:55.281949 IP 10.1.10.1.60949 > 10.1.10.20.http: Flags [SEW], seq 4061332314, win 65535, options [mss 1460,nop,wscale 6,nop,nop,TS val 1281255222 ecr 0,sackOK,eol], length 0 in slot1/tmm1 lis=
+|SNAT
+|全局
+|多对一
 
-// 2. internal interface
-# tcpdump -ni internal host 10.1.20.11 or 10.1.20.12
-00:27:55.281989 IP 10.1.20.222.19175 > 10.1.20.11.tproxy: Flags [SEW], seq 4061332314, win 65535, options [mss 1460,nop,wscale 6,nop,nop,TS val 1281255222 ecr 0,sackOK,eol], length 0 out slot1/tmm1 lis=/Common/http_vs
+|SNAT Automap
+|VS
+|多对一
 
-// 3. the TCP TIME_WAIT from app server
-$ netstat -antulop | grep 8081
-tcp6       0      0 10.1.20.11:8081         10.1.20.222:19175       TIME_WAIT   -                timewait (58.15/0/0)
-----
+|SNAT Pool
+|VS
+|多对多
 
-[source, bash]
-.*5. Clean up *
-----
-tmsh delete ltm virtual http_vs
-tmsh delete ltm pool http_pool
-tmsh delete ltm snatpool custom_snatpool
-----
+|===
+
+=== 对比 NAT、SNAT
+
+|===
+|对比项 |NAT |SANT
+
+|映射关系
+|一对一
+|多对一或者多对多
+
+|是否监听连接
+|是，接收所有发往NAT地址的连接
+|否，拒绝所有发往SNAT地址的连接请求.
+
+|管理力度
+|所有的连接只是通过LTM的连接表管理，但是是无状态的，连接不会被Timeout
+|连接通过LTM的连接表管理，有timeout设置
+
+|连接镜像
+|连接不能被镜像
+|连接可以被镜像
+|===
 
 === 内外访问外网
 
 SNAT 可以配置内网访问外网，如果内网访问外网，则将 origins 配置为内网网段，将 translation 配置为外网地址.
 
 [source, bash]
-.*1. Setup*
+.*示例*
 ----
-tmsh create ltm snat internet_access origins add { 10.1.20.0/24 } translation 10.1.10.100
-----
+// 1. create snat
+create ltm snat internet_access origins add { 10.1.20.0/24 } translation 10.1.10.100
 
-[source, bash]
-.*2. Test access external http service*
-----
+// 2. test access external service
 curl http://10.1.10.20/
-----
 
-[source, bash]
-.*3. Clean up*
-----
+// 3. clean up
 tmsh delete ltm snat internet_access
 ----
 
-== 用例
+== 接入模式
 
-[cols="2,5a"]
-|===
-|Name |Description
-
-|SSH 到内网
-|需要在外部网络穿透 SSH 连接到内部某台服务器
-
-[source, bash]
-----
-// create nat
-create ltm nat ssh_nat originating-address 10.1.20.14 translation-address 10.1.10.100 
-
-// ssh
-ssh root@10.1.10.100
-
-// clean up
-delete ltm nat ssh_nat 
-----
-
-|===
-
-== 组网架构
-
-=== 负载均衡设备组网有什么特殊之处
+=== 负载均衡作为网络设备有什么特殊之处
 
 负载均衡设备属于网络设备，处于应用的入口，负责将网络负载分发到不同的应用，那么负载均衡设备组网和传统网络设备有什么不同？传统网络设备如路由器负责 OSI 3 层基于 IP 的转发，交换机设备负责 OSI 2 层基于链路或广播域的转发，分工明确，在传统的网络设计中，基本上都是按照交换和路由的原理来进行设计的。
 
@@ -271,7 +259,7 @@ image:img/ltm-single-vlan-cluster.png[]
 
 NOTE: 单臂模式下如果客户端、服务器、负载均衡在同一个 vlan，则需要在负载均衡上配置 SNAT 以确保正常工作。
 
-==== 源地址替换模式
+=== 单臂接入模式 - 源地址替换模式
 
 如下图为源地址替换模式数据访问流程示意，源地址替换模式是对已经上线系统结构变化最小的一种，在源地址替换模式下的设计要点主要有以下几点:
 
@@ -293,7 +281,7 @@ image:img/ltm-single-lan-source-replace.png[]
 
 NOTE: 这种架构的缺点是服务器不知道客户端的地址，这对一些审计或统计性要求统计客户端 IP 的系统来说会存在问题，只有在 HTTP 协议的时候，可以通过将源地址插入到客户端请求的 HTTP Header 里，然后在服务器上通过读取这个Header，获得客户端的真实源IP地址。
 
-==== npath 模式
+=== 单臂接入模式 - npath 模式
 
 如下为 npath 模式的组网架构示意。npath 模式设计的关键：
 
@@ -313,7 +301,7 @@ npath 模式数据访问流程:
 
 NOTE: npath 模式最大的优势是负载均衡只处理客户端的请求，服务器的响应不经过负载均衡，通常 HTTP 请求带来的网络负载远远小于服务器响应带来的网络负载（上传和下载的比例可以超过 1 比 10），所以 npath 模式下负载均衡整体处理能力将提高很多，较小规格的负载均衡会处理较大网络负载。npath 模式的缺点是必须在服务器上配置 LoopBack 地址，这带来了额外的运维和后期维护的成本。
 
-==== 服务器非直连模式
+=== 单臂接入模式 - 服务器非直连模式
 
 如下为服务器非直连模式组网示意，这种组网架构主要解决的问题是负载均衡和服务器不在同一个 VLAN 的场景，设计的关键是：
 
@@ -335,7 +323,7 @@ image:img/ltm-single-vlan-nodirect.png[]
 
 NOTE: 服务器非直连模式最大的优势在于负载均衡上不需要配置 SNAT，缺点在于网络结构负载，带来额外运维和维护成本。
 
-==== 服务器更改网关模式
+=== 单臂接入模式 - 服务器更改网关模式
 
 和源地址替换模式组网架构类似，服务器更改网关模式需要修改服务器网关，指向负载均衡网关 Self IP，这样就避免了在负载均衡上配置 SNAT，服务器端可以知道客户端的地址（源地址替换模式下最大的缺陷）。服务器更改网关模式组网架构如下：
 

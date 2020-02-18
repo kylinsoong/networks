@@ -57,6 +57,12 @@ delete ltm persistence source-addr custom_source_address
 
 Cookie 的好处是不需要在负载均衡设备上记录 persistence records，Cookie Profile 依赖 HTTP Profile。
 
+Cookie persistence 有三种方法：
+
+1. HTTP Cookie Insert - 后端服务器不产生 Cookie，BIG-IP 插入一个 Cookie
+2. HTTP Cookie Rewrite - 后端服务器产生一个空 Cookie，BIG-IP 重写，添加 pool member 标识
+3. HTTP Cookie Passive - 后端服务器产生了一个完整的 Cookie，BIG-IP不做任何处理
+
 [source, bash]
 .*示例*
 ----
@@ -106,7 +112,7 @@ TCP 加速（TCP Express™）主要解决 TCP 通信中客户端响应慢（网
 1. Content Buffering - Content spooling
 2. Connection Management - OneConnect
 
-=== HTTP Profile
+=== HTTP
 
 HTTP Profile 主要设定 HTTP Fallback 地址（当目的 pool 不可达是将流量导入到一个新的地址）；给 HTTP 请求的 Header 中添加一个参数；控制 HTTP 返回中允许的参数；添加 X-Forwarded-For 等。
 
@@ -145,7 +151,7 @@ delete ltm profile http custom_http_profile
 
 NOTE: HTTP profile 通常只能添加或移除一个参数，如果想操作多个参数则需要 iRules 或 Policy。
 
-=== Stream Profile
+=== Stream
 
 Stream Profile 将 HTTP 请求流中的字符串替换。
 
@@ -180,8 +186,8 @@ delete ltm profile stream custom_stream
 
 * *Reset on Timeout* - 指定系统在超过空闲过期时间后发送 reset 数据包
 * *Idel Timeout* - 多长时间连接里面没有数据流量的时候就删除连接表
-* *Loose Initiation* - 如果选定，意味着在建立连接时不需要首先接收到 SYN 包（三次握手第一次握手），通常和 *Loose Close* 一起使用
-* *Loose Close* - 如果选定，则意味着四次握手中，只握一次，只要收到 FIN 立即关闭连接，不进行后面的 FIN/ACK 及被动关闭
+* *Loose Initiation* - client 发起tcp连接的syn经过F5到达服务器，但是服务器的syn-ack没经过F5回去，从别的路回去了，这种场景。 也叫三角路由，npath 场景，通常和 *Loose Close* 一起使用
+* *Loose Close* - 类似 *Loose Initiation*，只用在连接关闭的场景
 
 [source, bash]
 .*示例*
@@ -233,6 +239,57 @@ delete ltm profile fastl4 custom_fastl4_reset
 delete ltm profile fastl4 custom_fastl4_loose
 ----
 
+=== OneConnect
+
+* 全代理架构下，实现连接聚合降低服务器的连接总数，将服务器端的连接重复使用，以达到增加服务器出了能力的作用，可以增加 30% 的服务器处理能力
+* 需要对每一个请求都进行单独处理（注意在多数情况下，LTM只对一个连接的第一个包进行处理）
+* 典型的，打开Cookie会话保持有时候会出现保持不正确的情况，这时就需要打开One Connect
+* 通过设置Mask=255.255.255.255，可以使后台服务器可以“看到”客户端源IP，但这个时候One-connect只对一个客户端的连接起作用
+
+NOTE: One Connect Profile不是必须和HTTP Profile共用，也可以用于其他应用协议。用于其他应用协议的时候必须使用 iRules 编程来调用 One Connect。在需要对长连接进行拆分处理的时候，也需要用One Connect Profile。
+
+[source, bash]
+.*示例*
+----
+// 1. set up vs and pool
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
+
+// 2. create OneConnect profie and reference to VS
+create ltm profile one-connect custom_one_connect defaults-from oneconnect max-size 200 max-age 60 idle-timeout-override 30 source-mask 255.255.255.0 limit-type idle
+modify ltm virtual http_vs profiles add { custom_one_connect { } }
+
+// 3. test, send 100 times http request
+for i in {1..100} ; do curl http://10.1.10.20/hello; sleep 0.1; done
+
+// 4. check the connection pool 
+# show sys connection cs-server-addr 10.1.10.20
+Sys::Connections
+10.1.10.1:60789  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 1)  none  none
+10.1.10.1:60797  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
+10.1.10.1:60794  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
+10.1.10.1:60793  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 1)  none  none
+10.1.10.1:60801  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
+10.1.10.1:60802  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 1)  none  none
+10.1.10.1:60798  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
+10.1.10.1:60790  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 1)  none  none
+10.1.10.1:60799  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
+10.1.10.1:60787  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 0)  none  none
+10.1.10.1:60803  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
+10.1.10.1:60791  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
+10.1.10.1:60796  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
+10.1.10.1:60788  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
+10.1.10.1:60792  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
+10.1.10.1:60795  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
+10.1.10.1:60800  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
+Total records returned: 17
+
+// 5. clean up
+delete ltm virtual http_vs
+delete ltm pool http_pool
+delete ltm profile one-connect custom_one_connect 
+----
+
 === TBD
 
 [cols="2,5a"]
@@ -246,33 +303,6 @@ delete ltm profile fastl4 custom_fastl4_loose
 .*示例*
 ----
 modify ltm virtual http_vs profiles replace-all-with { http { } tcp-wan-optimized { context clientside } tcp-lan-optimized { context serverside } } 
-----
-
-|OneConnect
-|全代理架构下，将服务器端的连接重复领用，以达到增加服务器出了能力的作用，官方数据显示可以增加 30% 的服务器处理能力
-
-[source, bash]
-.*示例*
-----
-// set up vs and pool
-create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } } monitor custom_http_monitor
-create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
-
-// set up another vs and pool
-create ltm pool http_pool2 members add { 10.1.20.11:80 { address 10.1.20.11 } 10.1.20.12:80 { address 10.1.20.12 } 10.1.20.13:80 { address 10.1.20.13 } } monitor custom_http_monitor
-create ltm profile one-connect custom_oneconnect max-size 200 max-age 86400
-create ltm profile web-acceleration custom_acceleration defaults-from optimized-acceleration cache-size 200
-create ltm virtual http_vs2 destination 10.1.10.21:80 ip-protocol tcp profiles add { http { } custom_acceleration { } custom_oneconnect { } } pool http_pool2
-
-// send test requests to both vs
-for i in {1..100} ; do curl http://10.1.10.21/hello ; done
-for i in {1..100} ; do curl http://10.1.10.20/hello ; done
-
-// check the connections created
-# show ltm pool http_pool | grep "Total Connections "
-  Total Connections                                               100
-show ltm pool http2_pool | grep "Total Connections "
-  Total Connections                                                 1
 ----
 
 |HTTP Compression

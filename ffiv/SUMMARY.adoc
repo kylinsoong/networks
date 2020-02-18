@@ -3,7 +3,7 @@
 . link:README.adoc[Overview]
 . link:admin.adoc[基本管理]
 . link:networking.adoc[Networking the BIG-IP]
-. link:vs.adoc[Virtual Servers] 
+. link:vs.adoc[Virtual Servers]
 . link:lb.adoc[Load Balancing]
 . link:monitor.adoc[Monitor]
 . link:profiles.adoc[Virtual Server Profiles]

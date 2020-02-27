@@ -108,6 +108,71 @@ delete ltm pool http_pool
 ----
 |===
 
+=== Packet Process Priority
+
+image:img/ltm-packet-processing-priotiry.png[]
+
+
+=== Virtual Server Priority
+
+[cols="2,2,5a"]
+|===
+|Priority |Type |Config
+
+|1 
+|Specific IP address and specific port
+|
+[source, bash]
+----
+10.1.10.20:80
+----
+
+|2 
+|Specific IP address and all port
+|
+[source, bash]
+----
+10.1.10.20:*
+----
+
+|3 
+|Network IP address and specific port
+|
+[source, bash]
+----
+10.1.10.0:80
+mask: 255.255.255.0
+----
+
+|4
+|Network IP address and all port
+|
+[source, bash]
+----
+10.1.10.0:*
+mask: 255.255.255.0
+----
+
+|5 
+|All network and specific port
+|
+[source, bash]
+----
+0.0.0.0:80
+mask: 0.0.0.0
+----
+
+|6 
+|All network and adll port
+|
+[source, bash]
+----
+0.0.0.0:*
+mask: 0.0.0.0
+----
+|===
+
+
 == VS Type
 
 本部分说明不同 VS 类型的使用场景及注意事项。本部分的内容（包括图片）参照 https://support.f5.com/csp/article/K8082（该文章可以从互联网上找到）。

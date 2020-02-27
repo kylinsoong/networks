@@ -1,0 +1,300 @@
+= DNS
+:toc: manual
+
+本部分内容来自 https://www.cnadn.net/download 中*迄今为止最全最深入的BIGIP-DNS/GTM原理及培训资料* 的内容。
+
+== 基本概念、对象术语、配置
+
+=== 什么是 BIG-IP DNS
+
+* 提供全球流量引导（DNS 角度） - 广域网负载均衡，确保应用快数据中心全球高可用
+* 实现 DNS 冗余、容错 - LTM 负载均衡 DNS，DNS 双中心部署
+* 实现 DNS 优化解析 - DNS Services，iRules
+* 提高 DNS 安全性 - 信任的响应，阻止缓存中毒
+* F5 BIG-IP 家族重要的成员
+
+=== 重要对象
+
+[cols="2,5a"]
+|===
+|名称 |描述
+
+|vs
+|GTM􏱄中最小的对象，逻辑组织在 server 和 pool 中，*其 IP 即为 GTM 最终提供解析的结果*
+
+|Server
+|
+* 用来代表一个 server 实体，类似于 LTM 中的 Node
+* GTM 中server 分为两类：
+** BIG-IP Server
+** Non BIG-IP Server
+* 隶属于 datacenter 中，同一个 server 不应同时存在于两个 datacenter 中
+* 关联某个 Link
+* 可设定监控检查，容量控制
+
+|Datacenter
+|物理对象，表示一个数据中心。
+
+* 也可以设计为逻辑数据中心，每链路为一 DC
+* 包括 Servers, Links
+
+|Link
+|表述 datacenter 中的链路，与数据中心关联
+
+* 物理对象，描述一条链路
+* 属于某个 DC，关联多个 Server
+* 可实现基于 Link 的容量限制
+
+|Pool
+|用来组织 VS，是 wideip 的配置要素，同一个 VS 可以属于多个 pool
+
+* 被 Wideip 调运
+* 是一个组织中各种资源的容器
+* 丰富的 LB 算法来选择 Pool 下的 VS
+* 监控状态检查
+* A 记录的 TTL 控制
+* CNAME pool
+* Fallback IP 设定
+* 容量控制
+
+|Wideip
+|对外呈现的智能域名（FQDN），其下包含 pool
+
+* 提供 A 记录解析的域名
+* 调运 pool, iRule
+* 使用 LB 算法选择 Pools
+* 可以会话保持
+* 可以设置 resort pool
+|===
+
+*BIG-IP DNS 各对象之间的关系*
+
+image:img/bigid-dns-object-relations.png[]
+
+=== 重要术语
+
+[cols="2,5a"]
+|===
+|名称 |描述
+
+|Sync group
+|同步组，容许多个 GTM 间共享信息及配置的组
+
+|iQuery
+|F5 私有协议，基于 XML 的信息交换，主要用来同步信息、配置、状态监测，基于 TCP 4353
+
+|LDNS
+|Local DNS，用户端的 DNS server
+
+|Path
+|GTM 与 LDNS 之间的路径
+
+|Probe
+|GTM 发出的请求，获得某种消息的 request
+
+|Monitor
+|针对 service 的状态监测
+
+|Listener
+|GTM 对外提供服务的 IP，实际呈现为一个 LTM 部分中的 VS
+
+* 可以是 Self IP
+* 也可以是 Floating Self IP
+|===
+
+=== ZoneRunner
+
+ZoneRunner 是 BIG-IP DNS 提供的一个图形化的 BIND 管理界面，属于一个中间程序，是 GTM 前端和后端 BIND 的通信接口，在 Zone 同步中起着关键作用。
+
+== 核心进程、命令、配置文件
+
+=== 主要进程
+
+[source, bash]
+.*查看运行的主要进程*
+----
+[root@bigipA:Active:Standalone] config # bigstart status | grep run
+alertd       run (pid 6846) 2 hours
+big3d        run (pid 7135) 2 hours
+bigd         run (pid 5635) 2 hours
+cbrd         run (pid 4174) 2 hours
+chmand       run (pid 5177) 2 hours
+csyncd       run (pid 5627) 2 hours
+devmgmtd     run (pid 4847) 2 hours
+dynconfd     run (pid 4845) 2 hours
+errdefsd     run (pid 7574) 2 hours
+eventd       run (pid 5639) 2 hours
+evrouted     run (pid 7580) 2 hours
+gtmd         run (pid 4851) 2 hours
+icr_eventd   run (pid 6431) 2 hours
+iprepd       run (pid 5179) 2 hours
+keymgmtd     run (pid 6848) 2 hours
+lacpd        run (pid 4854) 2 hours
+lind         run (pid 4448) 2 hours
+logstatd     run (pid 5636) 2 hours
+mcpd         run (pid 4170) 2 hours
+merged       run (pid 5170) 2 hours
+mgmt_acld    run (pid 6055) 2 hours
+named        run (pid 7576) 2 hours
+ntlmconnpool run (pid 7573) 2 hours
+pccd         run (pid 4443) 2 hours
+restjavad    run (pid 4172) 2 hours
+restnoded    run (pid 6432) 2 hours
+scriptd      run (pid 5638) 2 hours
+sflow_agent  run (pid 7139) 2 hours
+snmpd        run (pid 6434) 2 hours
+sod          run (pid 4165) 2 hours
+statsd       run (pid 4169) 2 hours
+syscalld     run (pid 5178) 2 hours
+tamd         run (pid 5626) 2 hours
+tmipsecd     run (pid 5634) 2 hours
+tmm          run (pid 6839) 2 hours
+tmrouted     run (pid 4855) 2 hours
+tomcat       run (pid 6430) 2 hours
+vxland       run (pid 4441) 2 hours
+wccpd        run (pid 6435) 2 hours
+zrd          run (pid 7137) 2 hours
+zxfrd        run (pid 6841) 2 hours
+----
+
+*主要进程之间的关系图*
+
+image:img/bigip-dns-process.png[]
+
+* *gtmd* - 负责智能解析，会话保持，负责发起 iQuery 连接、发送 probe request、接收 big3d 反馈的信息并对信息进行处理，Forward 解析应答给 TMM
+* *big3d* - 存在于 bigip 类型 server 上，iQuery 端口的监听进程，负责执行具体的探测动作，并将消息反馈给 gtmd
+* *tmm* - 负责 listener, DNS 请求实际由 tmm 先获得，如请求的目的地址是 listener，交给 gtmd
+* *zrd* - Zone runner 进程，负责 GUI-zonerunner 界面操作与 named 的通讯，利用好 BIND 的 dynamic dns 来 update，配置 wideip 时通知 zrd，zrd 调度sync_zones 同步 zone 数据，并验证、更新 zone；错误的zone bind配置会导致 zrd 不断反复重启
+* *named* - Bind 的核心进程，named.conf，zones 加载，负责处理 return to dns 请求，zrd 发送的更新被存储到 named 的 journal files 中，更新不实时的反应在 zone 文件中 Rndc freeze
+* *zxfrd* - DNS Express 功能的 zone 同步进程，负责和 master 间同步，并将信息报告给 tmm 
+
+=== 重要命令
+
+[source, bash]
+.*bigip_add: 在 bigip server 间同步证书*
+----
+ bigip_add -h
+
+usage: bigip_add  [ [ -d ] [ -a ] [-p] [ -h ] [ -allow_duplicates ][ <default user>@ ] [ <peer ip address> | <user>@<peer ip address> ] ]
+      -d  Debug mode
+      -a  Appliance mode
+      -p  Specify which port to use for establishing this ssh connection.
+      -h  This help text
+      -allow_duplicates Do not remove duplicate certs during certificate exchange procedure.
+----
+
+[source, bash]
+.*iqdump - 额外创建一条 iquery connection，是 iquery mesh 排错的重要工具*
+----
+iqdump -h
+usage: iqdump host [[-s] sync_group] [-cipher cipher_list] [-t min_tls_version]
+	-s: set sync group name
+	-cipher: set cipherlist for iquery connection
+	-t: set the minimum allowed TLS version
+----
+
+[source, bash]
+.*tmsh htm - tmsh 命令行*
+----
+show gtm 
+----
+
+[source, bash]
+.*sync_zones - 同步 named 和 zones*
+----
+sync_zones
+----
+
+[source, bash]
+.*geoip_lookup - 查询一个 IP 的 Geolocation 信息*
+----
+geoip_lookup 10.1.10.240
+----
+
+
+
+
+== 基本配置
+
+[source, bash]
+.*1. Listener*
+----
+// create
+create gtm listener dns_listener address 10.1.10.20 ip-protocol udp
+
+// list
+list gtm listener dns_listener
+
+// delete
+delete gtm listener dns_listener
+----
+
+[source, bash]
+.*2. GSLB*
+----
+// data center
+create gtm datacenter EU_DataCenter
+create gtm datacenter US_DataCenter
+
+// server
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----

@@ -2,11 +2,12 @@
   
 . link:ffiv/README.adoc[概述]
 . link:ffiv/admin.adoc[基本管理]
-. link:ffiv/networking.adoc[Networking the BIG-IP]
 . link:ffiv/vs.adoc[Virtual Servers] 
 . link:ffiv/lb.adoc[Load Balancing]
 . link:ffiv/monitor.adoc[Monitor]
 . link:ffiv/profiles.adoc[Virtual Server Profiles]
 . link:ffiv/security.adoc[Security]
+. link:ffiv/dns.adoc[DNS]
 . link:ffiv/iRules/README.adoc[iRules]
+. link:ffiv/networking.adoc[Networking the BIG-IP]
 . link:ffiv/qa.adoc[Q & A]

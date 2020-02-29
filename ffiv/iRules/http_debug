@@ -10,7 +10,7 @@ when CLIENT_ACCEPTED {
     
     set localip [IP::local_addr]
     set localport [TCP::local_port]
-    set local $clientip:$localport
+    set local $localip:$localport
 
     log local0. "Client connection accepted from $client, local address is $local, additional parameters:
     IP::idle_timeout: [IP::idle_timeout],

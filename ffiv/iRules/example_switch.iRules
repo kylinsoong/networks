@@ -1,9 +1,0 @@
-when CLIENT_ACCEPTED {
-    set requestport [TCP::local_port]
-    switch -exact $requestport {
-        80 { pool irules_pool1 }
-        8081 { pool irules_pool2 }
-        443 { pool irules_pool3 }
-        default { pool irules_pool4 }
-    }
-}

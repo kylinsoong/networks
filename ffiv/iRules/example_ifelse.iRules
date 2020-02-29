@@ -1,8 +1,0 @@
-when HTTP_REQUEST {
-    
-    set httppath [HTTP::path]
-    
-    if { $httppath ends_with "php" } { pool irules_pool1 }
-    elseif { $httppath ends_with "jpg" or $httppath ends_with "png" } { pool irules_pool2 }
-    else { pool irules_pool3 }
-}

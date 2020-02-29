@@ -99,7 +99,7 @@ image:img/bigid-dns-object-relations.png[]
 |GTM 对外提供服务的 IP，实际呈现为一个 LTM 部分中的 VS
 
 * 可以是 Self IP
-* 也可以是 Floating Self IP
+* 也可以是 Floating IP
 |===
 
 === ZoneRunner
@@ -211,57 +211,76 @@ sync_zones
 geoip_lookup 10.1.10.240
 ----
 
+== 单数据中心配置示例
 
+单数据中心场景如下：
 
+image:img/gtm-1st-example.png[]
 
-== 基本配置
+* 数据中心名称为 BJ_DS
+* DNS 和 LTM 两台设备位于数据中心
+* 数据中心内网 3 台服务器提供服务，三台服务器通过 LTM 进行负载均衡，负载均衡上的 VS 对外提供服务
+* 权威域上注册一个域名 `www.example.com` 来表示服务的域名
 
 [source, bash]
-.*1. Listener*
+.*1. 创建 Listener*
 ----
 // create
-create gtm listener dns_listener address 10.1.10.20 ip-protocol udp
+create gtm listener sample_listener address 10.1.10.50 ip-protocol udp 
 
-// list
-list gtm listener dns_listener
-
-// delete
-delete gtm listener dns_listener
+// test
+dig @10.1.10.50 example.com
+dig @10.1.10.50 example.com +short
 ----
 
 [source, bash]
-.*2. GSLB*
+.*2. 创建 Data Center*
 ----
 // data center
-create gtm datacenter EU_DataCenter
-create gtm datacenter US_DataCenter
+create gtm datacenter BJ_DC
 
-// server
+// show data center
+show gtm datacenter BJ_DC 
 ----
 
 [source, bash]
-.**
+.*3. 创建 Servers(一个 DNS，一个 LTM，均位于 BJ_DC)*
 ----
+// create dns server
+create gtm server BJ_DC_DNS datacenter BJ_DC devices add { dns.example.com { addresses add { 10.1.10.240 } } } monitor bigip
 
+// create ltm server
+create gtm server BJ_DC_LTM datacenter BJ_DC devices add { ltm.example.com { addresses add { 10.1.10.245 } } } monitor bigip virtual-servers add { service.example.com { destination 10.1.10.20:80 } }
+
+// 登录 DNS，执行如下命令完成，证书交换
+bigip_add 10.1.10.245 
+
+// the two servers state
+# show gtm server | grep State
+  State        : enabled
+  State        : enabled
 ----
 
 [source, bash]
-.**
+.*4. 创建 Pool*
 ----
-
-----
-
-[source, bash]
-.**
-----
-
+create gtm pool a service_pool members add { BJ_DC_LTM:service.example.com } 
 ----
 
 [source, bash]
-.**
+.*5. 创建 Wideip*
+----
+create gtm wideip a www.example.com pools add { service_pool } 
 ----
 
+[source, bash]
+.*6. 测试*
 ----
+$ dig @10.1.10.50 www.example.com +short
+10.1.10.20
+----
+
+== TD
 
 [source, bash]
 .**

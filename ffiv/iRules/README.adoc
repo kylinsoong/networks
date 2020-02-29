@@ -500,7 +500,7 @@ when HTTP_REQUEST {
 }
 ----
 
-=== 客户端的请求以某个特定的 IP 开头
+=== 根据请求 IP 转发请求到不同的 pool
 
 [source, bash]
 ----
@@ -511,6 +511,21 @@ when CLIENT_ACCEPTED {
         pool html_pool
     } else {
         pool http_pool
+    }
+}
+----
+
+=== 根据请求 port 转发请求到不同 pool
+
+[source, bash]
+----
+when CLIENT_ACCEPTED {
+    set requestport [TCP::local_port]
+    switch -exact $requestport {
+        80 { pool irules_pool1 }
+        8081 { pool irules_pool2 }
+        443 { pool irules_pool3 }
+        default { pool irules_pool4 }
     }
 }
 ----
@@ -568,36 +583,138 @@ when HTTP_REQUEST {
 }
 ----
 
+=== 操作 HTTP 头属性
+
 [source, bash]
 ----
+when HTTP_REQUEST {
+    set mylist [split [HTTP::header names] " "]
+    log local0. "HTTP header list: $mylist"
 
+    set mylist [lsort $mylist]
+    log local0. "Sorted list: $mylist"
+    log local0. "List length: [llength $mylist]"
+
+    set item [lindex $mylist 3]
+    log local0. "Item #4: '$item'"
+
+    set find1 [lsearch $mylist "Accept-Encoding"]
+    set find2 [lsearch $mylist "X-Forwarded-For"]
+    log local0. "List item 'Accept-Encoding' at index # $find1"
+    log local0. "List item 'X-Forwarded-For' at index # $find2"
+
+    foreach item $mylist {
+        set itemnumber [lsearch $mylist $item]
+        incr itemnumber
+        log local0. "Index #$itemnumber: '$item'"
+    }
+
+}
 ----
 
-== 示例
+=== 调试 HTTP 请求
 
-[cols="2,5a"]
-|===
-|Name |Description
-
-|link:http_debug.iRules[http_debug.iRules]
-|Debug the http request by events(`CLIENT_ACCEPTED` -> `HTTP_REQUEST` -> `LB_SELECTED` -> `SERVER_CONNECTED` -> `HTTP_RESPONSE`):
+Debug the http request by events(`CLIENT_ACCEPTED` -> `HTTP_REQUEST` -> `LB_SELECTED` -> `SERVER_CONNECTED` -> `HTTP_RESPONSE`):
 
 1. Log TCP segment and IP packet
 2. Log IP HTTP parameters
 3. Log LB selection
 4. Log TCP egment and IP packet
-5. Log IP HTTP parameters 
+5. Log IP HTTP parameters
 
-|link:example_list.iRules[example_list.iRules]
-|Example of using list.
+[source, bash]
+.*link:http_debug[http_debug]*
+----
+when RULE_INIT {
+    log local0. "iRule created or updated."
+}
 
-|link:example_switch.iRules[example_switch.iRules]
-|Example of using switch
+when CLIENT_ACCEPTED {
 
-|link:example_ifelse.iRules[example_ifelse.iRules]
-|Example of using if else
+    set clientip [IP::client_addr]
+    set clientport [TCP::client_port]
+    set client $clientip:$clientport
 
-|link:example_print_http_headers.iRules[example_print_http_headers.iRules]
-|Iterate http headers and print to log
+    set localip [IP::local_addr]
+    set localport [TCP::local_port]
+    set local $localip:$localport
 
-|===
+    log local0. "Client connection accepted from $client, local address is $local, additional parameters:
+    IP::idle_timeout: [IP::idle_timeout],
+    IP::tos: [IP::tos],
+    ip_ttl: [ip_ttl],
+    LB::server: [LB::server],
+    TCP::bandwidth: [TCP::bandwidth],
+    TCP::mss: [TCP::mss],
+    TCP::offset: [TCP::offset],
+    TCP::remote_port: [TCP::remote_port],
+    TCP::rtt: [TCP::rtt]"
+}
+
+when HTTP_REQUEST {
+
+    set httphost [HTTP::host]
+    set httppath [HTTP::path]
+    set httpuri [HTTP::uri]
+    set useragent [HTTP::header "User-Agent"]
+
+    log local0. "Client made an HTTP request, client's browser: $useragent, client requested the $httppath page on $httphost, full URI: $httpuri, additional parameters:
+    HTTP::is_keepalive: [HTTP::is_keepalive],
+    HTTP::is_redirect: [HTTP::is_redirect],
+    HTTP::method: [HTTP::method],
+    HTTP::request: [HTTP::request],
+    HTTP::request_num: [HTTP::request_num],
+    LB::server: [LB::server]"
+}
+
+when LB_SELECTED {
+    set poolname [LB::server pool]
+    set memberip [LB::server addr]
+    set memberport [LB::server port]
+    set member $memberip:$memberport
+
+    log local0. "Pool: $poolname, member: $member"
+}
+
+when SERVER_CONNECTED {
+
+    set serverip [IP::server_addr]
+    set serverport [TCP::server_port]
+    set server $serverip:$serverport
+   
+    set localip [IP::local_addr]
+    set localport [TCP::local_port]
+    set local $clientip:$localport
+   
+    set clientip [IP::client_addr]
+    set clientport [TCP::client_port]
+    set client $clientip:$clientport
+   
+    log local0. "Connection made with $server, local address is $local, client address is $client, additional parameters:
+    IP::client_addr: [IP::client_addr],
+    IP::idle_timeout: [IP::idle_timeout],
+    ip_ttl: [ip_ttl],
+    TCP::bandwidth: [TCP::bandwidth],
+    TCP::client_port: [TCP::client_port],
+    TCP::mss: [TCP::mss],
+    TCP::offset: [TCP::offset],
+    TCP::remote_port: [TCP::remote_port],
+    TCP::rtt: [TCP::rtt]"
+}
+
+when HTTP_RESPONSE {
+    set responseheaders [HTTP::header names]
+    set type [HTTP::header "Content-Type"]
+    set length [HTTP::header "Content-Length"]
+    set status [HTTP::status]
+
+    log local0. "Pool member made an HTTP response, Response headers: $responseheaders, $status response with $type, Size of content: $length bytes, additional parameter:
+    HTTP::is_keepalive: [HTTP::is_keepalive],
+    HTTP::is_redirect: [HTTP::is_redirect],"
+}
+----
+
+[source, bash]
+----
+
+----

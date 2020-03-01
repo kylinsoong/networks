@@ -1,16 +1,19 @@
 = 应用交付网络
 
-== 网络环境
+== 内容概要
+
+本文档以实验记录为主，适合 BIG-IP LTM/DNS 的初学者，文档分 8 个部分：
+
+1. *基本管理* - TMOS 基本管理命令演示，tcpdump 及 wireshark 工具的使用演示。
+2. *Virtual Server* - BIG-IP LTM 处理 Inbound Traffic 的四种方式（Self IPs，NAT，SNATs，Virtual Servers）示例，不同 VS 类型下数据流程实验（Standard（L4）、Standard（L7）、Performance（L4）、Performance（L7）、Forwarding（L4）、Reject）。
+3. *Load Balancing* - 静态负载均衡和动态负载均衡相关的实验（Round Robin、Ratio、Least Connections、Fastest、Observed、Predictive、Weighted Least Connections、Least Sessions 等）
+4. *Monitoring* - 自定义 ICMP 的健康检查，自定义 HTTP 的健康检查，Inband 被动式监控检测示例
+5. *Profiles* - 实验展示不同 Profiles（HTTP、Stream、Source Address Affinity、Cookie、FastL4、OneConnect、HTTP Compression、Web Acceleration）的功能特性
+6. *DNS* - BIG-IP DNS 基本术语、对象，单数据中心配置示例
+7. *iRules* - iRules 基本语法，和常见用例
+8. *Networking* - 集中接入方式对比示例  
+
+== 实验网络环境
 
 image:img/vmlab_net.png[]
 
-== 内容列表
-
-[cols="2,5a"]
-|===
-|Name |Description
-
-|
-|
-
-|===

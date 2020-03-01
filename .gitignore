@@ -19,6 +19,8 @@ target
 war
 gwt-unitCache
 
+.DS_Store
+
 # gitbook
 node_modules
 _book

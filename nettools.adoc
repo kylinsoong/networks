@@ -1,0 +1,13 @@
+= Socket 小工具
+
+A series of tools that provide service via socket:
+
+|===
+|Name |Description
+
+|link:daytime/[daytime]
+|Provide server datetime via socket 5000 port
+
+|link:echo/[echo]
+|Provide echo service via socket 8877 port
+

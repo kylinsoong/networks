@@ -1,0 +1,225 @@
+= 安装
+:toc: manual
+
+本部说明如何在离线环境下如何安装 Nginx Plus 及 Nginx Controller
+
+== Nginx Plus 
+
+=== rpm 同步
+
+本部分需要在连网环境下进行，需要 NGINX Plus 的 License 证书, rpm 包同步完成后拷贝到离线环境。
+
+[source, txt]
+.*1. 创建 /etc/ssl/nginx 目录，拷贝证书*
+----
+# mkdir /etc/ssl/nginx
+
+// copy license cert key to /etc/ssl/nginx 
+scp nginx-repo.* root@IP:/etc/ssl/nginx
+----
+
+[source, txt]
+.*2. 安装 ca-certificates 依赖*
+----
+yum install ca-certificates -y
+----
+
+[source, txt]
+.*3. NGINX Plus yum 源配置*
+----
+wget -P /etc/yum.repos.d https://cs.nginx.com/static/files/nginx-plus-7.4.repo
+----
+
+[source, txt]
+.*4. 下载 NGINX Plus rpm 包到本地目录*
+----
+reposync -lmn --repoid=nginx-plus --download_path=/tmp/nginx/
+
+tar -cf nginx-plus.tar nginx-plus/
+----
+
+[source, txt]
+.*5. 验证下载的 rpm 包*
+----
+# tar -tf nginx-plus.tar 
+nginx-plus/
+nginx-plus/RPMS/
+nginx-plus/RPMS/nginx-ha-keepalived-2.0.19-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-ha-keepalived-debuginfo-2.0.19-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-nr-agent-2.0.0-12.el7.ngx.noarch.rpm
+nginx-plus/RPMS/nginx-plus-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-debuginfo-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-cookie-flag-20+1.1.0-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-cookie-flag-debuginfo-20+1.1.0-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-encrypted-session-20+0.08-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-encrypted-session-debuginfo-20+0.08-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-geoip-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-geoip-debuginfo-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-geoip2-20+3.3-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-geoip2-debuginfo-20+3.3-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-headers-more-20+0.33-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-headers-more-debuginfo-20+0.33-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-image-filter-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-image-filter-debuginfo-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-lua-20+0.10.15-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-lua-debuginfo-20+0.10.15-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-modsecurity-20+1.0.0-11.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-modsecurity-debuginfo-20+1.0.0-11.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-ndk-20+0.3.0-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-ndk-debuginfo-20+0.3.0-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-njs-20+0.3.7-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-njs-debuginfo-20+0.3.7-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-opentracing-20+0.9.0-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-opentracing-debuginfo-20+0.9.0-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-passenger-20+6.0.4-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-passenger-debuginfo-20+6.0.4-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-perl-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-perl-debuginfo-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-prometheus-20+1.2.0-1.el7.ngx.noarch.rpm
+nginx-plus/RPMS/nginx-plus-module-rtmp-20+1.2.1-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-rtmp-debuginfo-20+1.2.1-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-set-misc-20+0.32-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-set-misc-debuginfo-20+0.32-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-subs-filter-20+0.6.4-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-subs-filter-debuginfo-20+0.6.4-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-xslt-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-plus-module-xslt-debuginfo-20-1.el7.ngx.x86_64.rpm
+nginx-plus/RPMS/nginx-sync-1.1-1.el7.ngx.noarch.rpm
+----
+
+=== 本地 YUM 源配置
+
+本部分基于 HTTP Web 服务器(Nginx 或 HTTPD)配置本地 YUM 源。
+
+[source, txt]
+.*1. Web 服务器安装*
+----
+// httpd
+yum -y install httpd
+
+// nginx
+yum install nginx-plus -y
+----
+
+NOTE: 本部分可以两种 Web 服务器选择其一安装即可，如果选择 nginx，可以使用开源版本。
+
+[source, txt]
+.*2. 拷贝 rpm 包，本地仓库初始化*
+----
+mkdir -p /var/www/html/repos
+
+tar -xvf nginx-plus.tar -C /var/www/html/repos
+
+createrepo -v /var/www/html/repos/nginx-plus/ -o /var/www/html/repos/
+createrepo --workers=5 /var/www/html/repos/
+----
+
+[source, txt]
+.*3. Web 服务器配置文件*
+----
+// nginx
+cat << EOF > /etc/nginx/conf.d/yum.conf
+server {
+        listen   80;
+        server_name  yum.example.com;	
+        root   /var/www/html/repos;
+        location / {
+                autoindex on;	
+        }
+}
+EOF
+
+// httpd
+cat << EOF > /etc/httpd/conf.d/yum.conf
+Alias /repo "/var/www/html/repos"
+<Directory "/var/www/html/repos">
+  Options +Indexes +FollowSymLinks
+  Require all granted
+</Directory>
+<Location /repo>
+  SetHandler None
+</Location>
+EOF
+----
+
+[source, txt]
+.*4. 启动 Web 服务器*
+----
+// nginx
+systemctl restart nginx ; systemctl enable nginx ; systemctl status nginx
+
+// httpd
+systemctl restart httpd ; systemctl enable httpd ; systemctl status httpd
+----
+
+[source, txt]
+.*5. 确保 http 服务没有被防火墙阻拦*
+----
+firewall-cmd --zone=public --permanent --add-service=http
+firewall-cmd --reload
+----
+
+=== 测试
+
+本部分在内网需要安装 nginx plus 的机器上进行。
+
+[source, txt]
+.*1. 配置 yum 源*
+----
+cat << EOF > /etc/yum.repos.d/nginx.repo
+[nginx-plus]
+baseurl = http://yum.example.com/repo/nginx-plus
+enabled = 1
+gpgcheck = 0
+name = nginx-plus
+EOF
+----
+
+[source, txt]
+.*2. 安装*
+----
+yum install nginx-plus -y
+systemctl start nginx
+----
+
+[source, txt]
+.*3. 访问测试*
+----
+# echo "ok" > /usr/share/nginx/html/hello
+
+# curl http://localhost/hello
+ok
+----
+
+== Nginx Controller
+
+[source, txt]
+.**
+----
+
+----
+
+[source, txt]
+.**
+----
+
+----
+
+[source, txt]
+.**
+----
+
+----
+
+[source, txt]
+.**
+----
+
+----
+
+[source, txt]
+.**
+----
+
+----
+

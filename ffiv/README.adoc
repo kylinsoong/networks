@@ -1,4 +1,4 @@
-= BIG-IP LTM/DNS 快速开始实验手册
+= BIG-IP LTM/DNS 快速开始手册
 
 == 内容概要
 

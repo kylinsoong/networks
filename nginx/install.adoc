@@ -193,33 +193,215 @@ ok
 
 == Nginx Controller
 
+=== 前序安装
+
+*1. 镜像和许可文件*
+
+在 https://www.nginx.com/free-trial-request-nginx-controller/ 连接里可申请 Free Trial 镜像和许可文件。申请完成后可获得如下文件：
+
+* controller-installer-3.1.0.tar.gz	
+* controller_license.txt
+
+*2. 技术参数（所需环境）*
+
+|===
+|项目 |参数
+
+|OS
+|CentOS 7.7
+
+|RAM
+|8 GB
+
+|CPU
+|8-Core CPU @ 2.40 GHz
+
+|Disk
+|80+ GB
+|===
+
 [source, txt]
+.*3. 数据库*
+----
+// Adding PostgreSQL Yum Repository
+yum install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm -y
+
+// install 
+yum install postgresql95 postgresql95-server -y
+
+// initialize
+/usr/pgsql-9.5/bin/postgresql95-setup initdb
+
+// Config
+$ vim /var/lib/pgsql/9.5/data/postgresql.conf
+listen_addresses = '*'
+$ vim /var/lib/pgsql/9.5/data/pg_hba.conf
+host    all             all             0.0.0.0/0               md5
+
+// start & enable
+systemctl start postgresql-9.5
+systemctl status postgresql-9.5
+systemctl enable postgresql-9.5
+
+// Create the user with the Create DB permission
+$ sudo passwd postgres
+
+// create user(optional)
+su - postgres
+createuser db_user
+createdb test_db
+psql
+ALTER USER db_user WITH ENCRYPTED PASSWORD 'db_pass'
+ALTER USER db_user CREATEDB
+GRANT ALL PRIVILEGES ON DATABASE test_db TO db_user
+\q
+
+// disable firewall and seliux
+systemctl disable firewalld
+systemctl stop firewalld
+# getenforce 
+Disabled
+
+// test create db
+psql -h db.example.com  -p 5432  -U postgres -W
+postgres=# CREATE DATABASE test_db;
+postgres=# \c test_db;
+test_db=# CREATE TABLE users (id int, age int);
+test_db-# INSERT INTO users VALUES(1, 18);
+test_db=# SELECT * FROM users;
+
+postgres=# DROP DATABASE test_db;
+----
+
+[source, txt]
+.*4. 安装 utilities*
+----
+yum install curl wget jq envsubst -y
+
+// bash 4 or above is necessary
+bash --version
+----
+
+[source, txt]
+.*5. docker 版本(Optional)*
+----
+// (CE) 18.09 or above
+docker --version
+----
+
+[source, txt]
+.*6. Disable swap*
+----
+# vim /etc/fstab
+#/dev/mapper/centos-swap swap                    swap    defaults        0 0
+----
+
+=== 安装
+
+[source, txt]
+.*1. 拷贝安装文件*
+----
+$ scp controller* root@192.168.100.81:~
+
+# ls
+controller-installer-3.1.0.tar.gz  controller_license.tx
+----
+
+[source, txt]
+.*2. 解压*
+----
+tar xzf controller-installer-3.1.0.tar.gz
+----
+
+[source, txt]
+.*3. 运行安装脚本*
+----
+cd controller-installer
+./install.sh
+
+...
+
+ OK, everything went just fine!
+ Thank you for installing NGINX Controller.
+ You can find your installation in /opt/nginx-controller.
+ You can find the install log file in /var/log/nginx-controller/nginx-controller-install.log.
+ Access the system using your web browser at https://nginx-controller.example.com.
+ Documentation is available at https://nginx-controller.example.com/docs/.
+----
+
+=== 后续安装
+
+[source, txt]
+.*1. 查看运行的容器*
+----
+# kubectl get pods -n nginx-controller -o wide | grep Running
+apigw-6cd9c4c86c-2v79v                   2/2     Running     0          9m3s    10.244.0.11   nginx-controller.example.com   <none>           <none>
+apimgmt-f95bb768c-6kjzr                  1/1     Running     0          9m3s    10.244.0.7    nginx-controller.example.com   <none>           <none>
+appregistry-5b447747d9-pttnh             1/1     Running     0          9m3s    10.244.0.8    nginx-controller.example.com   <none>           <none>
+clickhouse-0                             1/1     Running     0          9m2s    10.244.0.20   nginx-controller.example.com   <none>           <none>
+cloud-mgr-5476946d6c-xmdck               1/1     Running     0          9m3s    10.244.0.6    nginx-controller.example.com   <none>           <none>
+coreapi-84c85dc5b-7s296                  1/1     Running     0          9m3s    10.244.0.9    nginx-controller.example.com   <none>           <none>
+cron-5f4887748d-jj8fl                    1/1     Running     0          9m3s    10.244.0.10   nginx-controller.example.com   <none>           <none>
+db-consumer-76789ddb8d-j7n2p             1/1     Running     0          9m3s    10.244.0.15   nginx-controller.example.com   <none>           <none>
+declarative-ext-api-85bdc4695d-zm9tr     1/1     Running     0          9m2s    10.244.0.12   nginx-controller.example.com   <none>           <none>
+events-6666f7748b-lc5fv                  1/1     Running     0          9m2s    10.244.0.14   nginx-controller.example.com   <none>           <none>
+frontend-67566d6fcd-nv7t8                1/1     Running     0          9m2s    10.244.0.13   nginx-controller.example.com   <none>           <none>
+metrics-59c4b4bbcd-p28mh                 1/1     Running     0          9m2s    10.244.0.16   nginx-controller.example.com   <none>           <none>
+nats-79484b8cc8-bbxkm                    1/1     Running     0          9m1s    10.244.0.19   nginx-controller.example.com   <none>           <none>
+nats-streaming-7f9b7fd49-n9knx           2/2     Running     0          9m2s    10.244.0.22   nginx-controller.example.com   <none>           <none>
+nats-streaming-worker-75676457dd-pvs9q   1/1     Running     0          9m2s    10.244.0.17   nginx-controller.example.com   <none>           <none>
+nats-worker-66c576b9f-rd4wt              1/1     Running     0          9m1s    10.244.0.18   nginx-controller.example.com   <none>           <none>
+platform-mgr-6474d8c989-lgx9v            1/1     Running     0          9m1s    10.244.0.21   nginx-controller.example.com   <none>           <none>
+receiver-845576776-9pmn6                 1/1     Running     0          9m1s    10.244.0.24   nginx-controller.example.com   <none>           <none>
+secrets-svc-6c687cdc6-lgdfq              2/2     Running     0          9m      10.244.0.23   nginx-controller.example.com   <none>           <none>
+----
+
+*2. 登录 NGINX Controller*
+
+访问 https://nginx-controller.example.com/login，使用安装过程中创建的管理员邮箱和密码（`k.song@example.com`/`f5demo666`），登录成功后进入 license 激活界面。
+
+image:img/controller-license.png[]
+
+NOTE: https://nginx-controller.example.com/docs/ 里有详细关于 NGINX Controller 的文档。
+
+*3. License 激活*
+
+在 license 激活界面选择 controller_license.txt，即可激活，激活后界面如下:
+
+image:img/controller-license-done.png[]
+
+[source, txt] 
 .**
 ----
 
 ----
 
-[source, txt]
+[source, txt] 
 .**
 ----
 
 ----
 
-[source, txt]
+[source, txt] 
 .**
 ----
 
 ----
 
-[source, txt]
+[source, txt] 
 .**
 ----
 
 ----
 
-[source, txt]
+[source, txt] 
 .**
 ----
 
 ----
 
+[source, txt] 
+.**
+----
+
+----

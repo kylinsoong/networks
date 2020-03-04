@@ -1,24 +1,13 @@
 = Networks
 
-== Socket 小工具
+== 网络小工具
 
-A series of tools that provide service via socket:
-
-|===
-|Name |Description
-
-|link:daytime/README.adoc[daytime]
-|Provide server datetime via socket 5000 port
-
-|link:echo/README.adoc[echo]
-|Provide echo service via socket 8877 port
-
-|===
+link:nettools.adoc[参考链接]
 
 == ADC
 
-link:/ffiv/[参考链接]
+link:/ffiv/README.adoc[参考链接]
 
 == Nginx
 
-link:/nginx/[参考链接]
+link:/nginx/README.adoc[参考链接]

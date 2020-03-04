@@ -5,9 +5,9 @@ A series of tools that provide service via socket:
 |===
 |Name |Description
 
-|link:daytime/[daytime]
+|link:daytime/README.adoc[daytime]
 |Provide server datetime via socket 5000 port
 
-|link:echo/[echo]
+|link:echo/README.adoc[echo]
 |Provide echo service via socket 8877 port
 

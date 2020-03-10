@@ -13,6 +13,7 @@
 .. link:ffiv/security.adoc[Security]
 .. link:ffiv/dns.adoc[DNS]
 .. link:ffiv/iRules/README.adoc[iRules]
+.. link:ffiv/iApps.adoc[iApps]
 .. link:ffiv/networking.adoc[Networking the BIG-IP]
 .. link:ffiv/qa.adoc[Q & A]
 . link:nginx/README.adoc[Nginx]

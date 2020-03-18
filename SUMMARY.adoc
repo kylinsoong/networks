@@ -18,3 +18,4 @@
 .. link:ffiv/qa.adoc[Q & A]
 . link:nginx/README.adoc[Nginx]
 .. link:nginx/install.adoc[安装]
+.. link:nginx/controller.adoc[Nginx Controller]

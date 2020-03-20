@@ -1,0 +1,96 @@
+= 监控与集成
+:toc: manual
+
+== AVR
+
+AVR(Application Visibility Reporting) 可以可视化展示业务智能、ROI 报表、容量计划、问题分析，性能等。支持 HTTP、DNS、TCP 等，可收集的统计信息包括：
+
+* Server Latency
+* Client-Side Latency
+* Throughput
+* Response Codes
+* Methods
+* URLs
+* Client IPs
+* Client Geographic
+* User Agent
+* User Sessions
+
+统计信息支持的视图包括：
+
+* Virtual Server
+* Pool Member
+* Response Codes
+* URL
+* HTTP Methods
+
+=== 配置 AVR
+
+==== 激活 AVR
+
+1. 确保具有相应的 License
+2. 激活，图形化界面选择 `System` -> `Resource Provisioning` -> `Application Visibility and Reporting (AVR)`，或执行如下命令
+
+[source, bash]
+----
+modify sys provision avr level nominal
+save sys config
+
+// verify
+list sys provision
+----
+
+==== 创建 Analytics Profile
+
+[source, bash]
+----
+create ltm profile analytics http_analytics defaults-from analytics collect-max-tps-and-throughput enabled collect-url enabled collect-ip enabled
+----
+
+==== 关联到 VS
+
+[source, bash]
+----
+modify ltm virtual http_vs profiles add { http_analytics }
+----
+
+=== 示例 - http 统计信息
+
+[source, bash]
+.*环境配置*
+----
+// 1. create vs
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
+create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
+
+// 2. create analytic profile
+create ltm profile analytics http_analytics defaults-from analytics collect-max-tps-and-throughput enabled collect-url enabled collect-ip enabled
+
+// 3. add analytic profile
+modify ltm virtual http_vs profiles add { http http_analytics }
+----
+
+[source, bash]
+.*统计 - 从当前时间过去两个小时内，response-code 视图下 transactions max-server-latency valid 的统计信息*
+----
+show analytics http report view-by response-code limit 1000 range now--now-2h measures { transactions max-server-latency valid }
+----
+
+=== 示例 - dns 统计信息
+
+[source, text]
+.*统计 - 从当前时间过去两个小时内按照域名统计收到 Paket 的总数*
+----
+# show analytics dns report view-by domain-name limit 1000 range now-1h measures { packets }
+-------------------------------------------
+Analytics query result
+-------------------------------------------
+Time range: 03/20/2020:01:17 (PDT) ---> now
+-------------------------------------------
+name            | packets
+-------------------------------------------
+example.com     | 4662
+dig             | 1830
+www.example.com | 1003
+test.com        | 1000
+----

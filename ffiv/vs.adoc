@@ -469,7 +469,7 @@ Forwarding L3 VS 数据处理流程:
 2. LTM 评估 Packet，找到目的地 IP 地址
 3. LTM 发送 SYN 到对应的 Node
 4. Node 返回 SYN/ACK 到 LTM
-5，LTM 返回 SYN/ACK 到 Client
+5. LTM 返回 SYN/ACK 到 Client
 6. Client 发送 ACK 到 LTM（完成了三次握手）
 7. LTM 发送 ACK 到 Node（服务器端也完成了三次握手）
 8. Client 发送数据 Packet 到 LTM

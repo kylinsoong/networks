@@ -1,0 +1,3 @@
+when HTTP_REQUEST {
+    HTTP::redirect "https://[HTTP::host][HTTP::uri]"
+}

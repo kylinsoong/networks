@@ -1,0 +1,296 @@
+= iRules 和 iRulesLX 实验
+:toc: manual
+
+== 环境准备，创建 VS
+
+[source, bash]
+.*1. 创建 VS*
+----
+create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
+create ltm virtual http_vs destination 10.1.10.50:80 ip-protocol tcp pool http_pool 
+----
+
+[source, bash]
+.*2. 测试 VS*
+----
+$ for i in {1..5} ; do curl http://10.1.10.50/server_addr.php ; echo ; done
+10.1.20.12
+10.1.20.11
+10.1.20.12
+10.1.20.13
+10.1.20.11
+----
+
+== iRules 基本能力
+
+=== URI 解析及重定向
+
+[source, bash]
+.*1. 创建 link:files/URI_Routing_iRule[URI_Routing_iRule]，内容如下*
+----
+when HTTP_REQUEST {
+  switch [HTTP::host] {
+    bar.example.com { pool http_pool }
+    foo.example.com { pool http_pool_1 }
+    zoo.example.com { pool http_pool_2 }
+  }
+}
+----
+
+[source, bash]
+.*2. 将 iRules 与 VS 关联*
+----
+modify ltm virtual http_vs profiles add { http}
+modify ltm virtual http_vs rules { URI_Routing_iRule }
+----
+
+[source, bash]
+.*3. 测试*
+----
+for i in bar foo zoo ; do curl http://$i/server_name.php ; done
+----
+
+=== HTTP Headers 日志记录和修改
+
+[source, bash]
+.*1. 创建 link:files/Header_Log_Strip_iRule[Header_Log_Strip_iRule]，内容如下*
+----
+when HTTP_REQUEST {
+  foreach header [HTTP::header names] {
+    log local0. "Request Header $header: [HTTP::header $header]"
+  }
+}
+
+when HTTP_RESPONSE {
+  foreach header [HTTP::header names] {
+    log local0. "Response Header $header: [HTTP::header $header]"
+    if {$header equals "Server"} {
+      HTTP::header remove $header
+    }
+  }
+  HTTP::header insert Server "NO-EXISTS-SERVER/8.0"
+}
+----
+
+[source, bash]
+.*2. 将 iRules 与 VS 关联*
+----
+modify ltm virtual http_vs rules { Header_Strip_Log_iRule } 
+----
+
+[source, bash]
+.*3. 测试*
+----
+$ curl -v http://10.1.10.50/hello 
+...
+< Server: NO-EXISTS-SERVER/8.0
+----
+
+=== 重定向 HTTP 请求到 HTTPS 
+
+[source, bash]
+.*1. 准备 HTTPS VS*
+----
+create sys crypto key custom_ssl_cert key-size 2048 gen-certificate country CN city Beijing state BJ organization 'F5, Inc' ou SE common-name www.f5demo.com email-address k.song@f5.com lifetime 3650
+create ltm profile client-ssl custom_client_ssl cert custom_ssl_cert key custom_ssl_cert 
+create ltm pool https_pool members add { 10.1.20.11:443 { address 10.1.20.11 } 10.1.20.12:443 { address 10.1.20.12 } 10.1.20.13:443 { address 10.1.20.13 } }
+create ltm virtual https_vs destination 10.1.10.50:443 ip-protocol tcp profiles add { custom_client_ssl { context clientside } serverssl { context serverside } } pool https_pool 
+
+// make sure both vs work as expect
+curl http://10.1.10.50/server_addr.php
+curl -k https://10.1.10.50/server_addr.php
+----
+
+[source, bash]
+.*2. 创建 link:files/HTTP_to_HTTPS_iRule[HTTP_to_HTTPS_iRule]，内容如下*
+----
+when HTTP_REQUEST {
+    HTTP::redirect "https://[HTTP::host][HTTP::uri]"
+}
+----
+
+[source, bash]
+.*3. 将 iRules 与 VS 关联*
+----
+modify ltm virtual http_vs rules { HTTP_to_HTTPS_iRule }
+----
+
+*4. 访问测试*
+
+浏览器访问 http://10.1.10.50/server_addr.php，则请求会重定向到 https://10.1.10.50/server_addr.php
+
+=== Stream
+
+[source, bash]
+.*1. 创建 link:files/Stream_iRule[Stream_iRule]，内容如下*
+----
+when HTTP_REQUEST {
+    HTTP::header remove Accept-Encoding
+    STREAM::disable
+}
+
+when HTTP_RESPONSE {
+    STREAM::expression @10.66.192.44@10.66.196.67@
+    STREAM::enable
+}
+----
+
+[source, bash]
+.*2. 将 iRules 与 VS 关联* 
+----
+modify ltm virtual http_vs profiles add { stream { context clientside } } rules { Stream_iRule } 
+----
+
+=== HTTP 请求内容修改
+
+[source, bash]
+.*1. 创建 link:files/HTTP_Payload_iRule[HTTP_Payload_iRule]，内容如下*
+----
+when HTTP_REQUEST {
+        HTTP::version 1.0
+        HTTP::header remove Accept-Encoding
+}
+
+when HTTP_RESPONSE {
+        HTTP::collect [expr 1024*1024]
+}
+
+when HTTP_RESPONSE_DATA {
+  set find "10.66.192.44"
+  set replace "***"
+
+  if {[regsub -all $find [HTTP::payload] $replace new_response] > 0} {
+    HTTP::payload replace 0 [HTTP::payload length] $new_response
+  }
+}
+----
+
+[source, bash]
+.*2. 将 iRules 与 VS 关联*
+----
+modify ltm virtual http_vs rules { HTTP_Payload_iRule }
+----
+
+[source, bash]
+.*3. 测试*
+----
+$ curl http://10.1.10.50/teststream
+server addr ***, request send to ***
+----
+
+== Security/SSL
+
+[source, bash]
+.*TD*
+----
+TD
+----
+
+== 
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----

@@ -468,6 +468,16 @@ when HTTP_REQUEST {
 }
 ----
 
+== iRule Events 顺序
+
+=== HTTP
+
+image:img/Event_Order_HTTP_v12.png[]
+
+=== HTTPS
+
+image:img/Event_Order_HTTPS_v7.png[]
+
 == 用例
 
 [source, bash]

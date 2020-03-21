@@ -1,0 +1,7 @@
+when HTTP_REQUEST {
+  switch [HTTP::host] {
+    dvwa.f5lab.com { pool http_pool }
+    peruggia.f5lab.com { pool http_pool_1 }
+    wackopicko.f5lab.com { pool http_pool_2 }
+  }
+}

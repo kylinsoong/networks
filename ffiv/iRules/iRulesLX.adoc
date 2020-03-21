@@ -1,3 +1,53 @@
 = iRulesLX
 :toc: manual
 
+== 什么是 iRulesLX
+
+iRulesLX 利用 Node.js 的能力增强 BIG-IP 在数据平面的可编程性，具体是增强了 iRules 的编程的能力，iRulesLX 提供了一种机制可调运 Node.js 程序，Node.js 位于 BIG-IP 之上，提供一个单线程的环境运行 Node.js 程序。
+
+iRulesLX 有两种模式，具体对比如下表。
+
+[cols="2,5a,5a"]
+|===
+|对比项 |ILX RPC |ILX Streaming
+
+|实现原理
+|TCL iRules 异步调运 Node.js 方法
+|通过 ILX profile 给 VS 增加了流数据接口
+
+|流量处理
+|iRules 负责接收、处理流量，Node.js 不接收流量或修改流量
+|Node.js 直接接收和修改流量
+
+|使用场景
+|处理少量工作，例如数据库记录
+|类似其他 Profile(TCP, SSL, HTTP Compression, Web Acceleration)，或和这些 Profile 配合使用
+|===
+
+== 示例
+
+=== LX RPC Echo
+
+[source, bash]
+.*1. *
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----

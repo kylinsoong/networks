@@ -1,0 +1,9 @@
+when HTTP_REQUEST {
+    HTTP::header remove Accept-Encoding
+    STREAM::disable
+}
+
+when HTTP_RESPONSE {
+    STREAM::expression @10.66.192.44@10.66.196.67@
+    STREAM::enable
+}

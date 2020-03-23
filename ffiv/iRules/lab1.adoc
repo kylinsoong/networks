@@ -186,25 +186,90 @@ server addr ***, request send to ***
 TD
 ----
 
-== 
+== iRules LX
+
+=== iRules LX 的创建和实现 
+
+本部分创建 iRules LX，将 POST 的数据转化为 JSON，并设定 HTTP Content-Type。
+
+*1. 创建 LX Workspace*
+
+* 选择 `Local Traffic` -> `iRules` -> `LX Workspaces`，创建 ilxlab1
+* 点击 `Add Extension` 按钮创建 ilxlab1_ext
+* 编辑 `index.js` 内容如下
 
 [source, bash]
-.**
+----
+'use strict' // Just for best practices
+// Import modules here
+var f5 = require('f5-nodejs');
+var qs = require('querystring'); // Used for parsing the POST data querystring
+
+// Create an ILX server instance
+var ilx = new f5.ILXServer();
+
+// This method will transform POST data into JSON
+ilx.addMethod('jsonPost', function (req, res) {
+  // Get POST data from TCL and parse to JS object
+  var postData = qs.parse(req.params()[0]);
+
+  // Turn postData object into JSON and return to TCL
+  res.reply(JSON.stringify(postData));
+});
+
+//Start the ILX server
+ilx.listen();
 ----
 
+* 点击 `Add iRule` 按钮，创建 json_post，编辑 json_post 内容如下
+
+[source, bash]
+----
+when HTTP_REQUEST {
+    # Collect POST data
+    if { [HTTP::method] eq "POST" }{
+        set cl [HTTP::header "Content-Length"]
+        HTTP::collect $cl
+    }
+}
+when HTTP_REQUEST_DATA {
+    # Send data to Node.js
+    set handle [ILX::init "ilxlab1_pl" "ilxlab1_ext"]
+    if {[catch {ILX::call $handle jsonPost [HTTP::payload]} result]} {
+      # Error handling
+      log local0.error  "Client - [IP::client_addr], ILX failure: $result"
+      HTTP::respond 400 content "<html>There has been an error.</html>"
+      return
+    }
+
+    # Replace Content-Type header and POST payload
+    HTTP::header replace "Content-Type" "application/json"
+    HTTP::payload replace 0 $cl $result
+    
+    log local0. [HTTP::payload]
+}
+----
+
+*2. 创建 LX Plugin*
+
+点击 `Local Traffic` -> `iRules` -> `LX Plugins`，创建 Plugin 名称为 ilxlab1_pl，管理 Workspace 为 ilxlab1。
+
+[source, bash]
+.*3. 将 iRuleLX 关联到 VS*
+----
+modify ltm virtual http_vs rules { ilxlab1_pl/json_post } 
 ----
 
 [source, bash]
-.**
+.*4. 测试*
+----
+$ curl --data "param1=value1&param2=value2&param3=value3" http://10.1.10.50/add
+
+// check from /var/log/ltm, 会有如下信息
+Mar 22 09:02:29 bigipA info tmm[10021]: Rule /Common/ilxlab1_pl/json_post <HTTP_REQUEST_DATA>: {"param1":"value1","param2":"value2","param3":"value3"}
 ----
 
-----
-
-[source, bash]
-.**
-----
-
-----
+=== TD
 
 [source, bash]
 .**

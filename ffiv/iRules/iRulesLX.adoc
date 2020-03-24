@@ -406,6 +406,8 @@ var plugin = new f5.ILXPlugin();
 plugin.startHttpServer(httpRequest);
 ----
 
+NOTE: link:https://nodejs.org/api/http.html[https://nodejs.org/api/http.html] 为 `http` module API 文档。
+
 [source, bash]
 .*3. 创建 ilx plugin*
 ----

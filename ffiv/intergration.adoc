@@ -94,3 +94,78 @@ dig             | 1830
 www.example.com | 1003
 test.com        | 1000
 ----
+
+== HSL
+
+HSL(High Speed Logging) 是BIG-IP 日志处理系统，可以方便的发送日志给外部服务器，发送方式有 HSL 和传统系统日志。
+
+=== Remote Logging 配置
+
+[source, bash]
+.*1. logging pool*
+----
+// create monitors
+create ltm monitor inband syslog_inband 
+create ltm monitor tcp syslog_active up-interval 180
+
+// create pool
+create ltm pool logging_pool members add { 10.1.20.15:514 { address 10.1.20.15} } monitor syslog_inband and syslog_active 
+
+// view logging pool
+list ltm pool logging_pool
+----
+
+[source, bash]
+.*2. Log Destination*
+----
+// HSL Log Destination
+create sys log-config destination remote-high-speed-log hsl_logging_dest pool-name logging_pool 
+
+// Formatted Log Destination
+create sys log-config destination remote-syslog formatted_dest format rfc5424 remote-high-speed-log hsl_logging_dest 
+----
+
+[source, bash]
+.*3. Log Publisher*
+----
+create sys log-config publisher logging_pub destinations add { formatted_dest local-syslog } 
+----
+
+[source, bash]
+.*4. Logging Filter*
+----
+create sys log-config filter my-mcpd-filter source mcpd level info publisher logging_pub 
+----
+
+[source, bash]
+.*5. 测试*
+----
+// delete pools
+delete ltm pool html_pool php_pool
+
+// check remote log
+$ ssh root@10.1.20.15
+$ tail -n 10 /var/log/syslog | grep bigip
+Mar 23 21:35:11 bigipA.f5demo.com mcpd[4171] AUDIT - client tmsh, tmsh-pid-12580, user root - transaction #119619-2 - object 0 - obj_delete { pool { pool_name "/Common/html_pool" } } [Status=Command OK]
+Mar 23 21:35:11 bigipA.f5demo.com mcpd[4171] AUDIT - client tmsh, tmsh-pid-12580, user root - transaction #119619-3 - object 0 - obj_delete { pool { pool_name "/Common/php_pool" } } [Status=Command OK]
+
+// check from local
+$ cat /var/log/audit
+...
+Mar 23 21:35:11 bigipA notice mcpd[4171]: 01070417:5: AUDIT - client tmsh, tmsh-pid-12580, user root - transaction #119619-2 - object 0 - obj_delete { pool { pool_name "/Common/html_pool" } } [Status=Command OK]
+Mar 23 21:35:11 bigipA notice mcpd[4171]: 01070417:5: AUDIT - client tmsh, tmsh-pid-12580, user root - transaction #119619-3 - object 0 - obj_delete { pool { pool_name "/Common/php_pool" } } [Status=Command OK]
+----
+
+=== TD
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----

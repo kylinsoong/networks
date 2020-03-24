@@ -395,16 +395,22 @@ image:img/tcp-dump-client-syn.png[]
 
 image:img/tcpdump-server-rst.png[]
 
-== TODO
+== UCS 配置备份与恢复
 
-[source, text]
-.**
+[source, bash]
+.*1. 查看帮助命令*
+----
+tmsh help sys ucs
 ----
 
+[source, bash]
+.*2. 创建一个 UCS 配置备份*
+----
+tmsh save sys ucs back_up_20200324.ucs
 ----
 
-[source, text]
-.**
+[source, bash]
+.*3. 从某一个 UCS 配置恢复*
 ----
-
+tmsh load sys ucs back_up_20200324.ucs no-license
 ----

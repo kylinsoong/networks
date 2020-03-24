@@ -563,6 +563,7 @@ Web Acceleration 主要是使用 RAM Cache 将静态内容（css, images 等）�
 
 Web Acceleration 需要依赖 HTTP profile。
 
+[source, bash]
 .*示例*
 ----
 // 1. create ram cache
@@ -601,43 +602,78 @@ delete ltm profile web-acceleration custom_caching
 
 == Security
 
-[cols="2,5a"]
-|===
-|Name |Description
+=== Client SSL Profile
 
-|Client SSL Profile
-|加密 HTTP 通信
+BIG-IP 通过 Client SSL Profile 支持加密的 HTTP 通信。
 
+[source, bash]
 .*示例*
 ----
-// create self-signed certificate
+// 1. create a self-signed certificate
 create sys crypto key custom_ssl_cert key-size 2048 gen-certificate country CN city Beijing state BJ organization 'F5, Inc' ou SE common-name www.f5demo.com email-address k.song@f5.com lifetime 3650
 
-// create a Client SSL Profile
-create ltm profile client-ssl custom_client_ssl cert custom_ssl_cert key custom_ssl_cert 
+// 2. create a client ssl profile
+create ltm profile client-ssl custom_client_ssl key custom_ssl_cert cert custom_ssl_cert 
 
-// create vs
-create ltm monitor https custom_https_monitor interval 8 timeout 25 recv "FSE vLab Test Web Site" send "GET /index.php\r\n"
-create ltm pool https_pool members add { 10.1.20.11:443 { address 10.1.20.11 } 10.1.20.12:443 { address 10.1.20.12 } 10.1.20.13:443 { address 10.1.20.13 } } monitor custom_https_monitor
-create ltm virtual https_virtual destination 10.1.10.30:443 ip-protocol tcp profiles add { tcp { } } pool https_pool
+// 3. create https vs
+create ltm pool https_pool members add { 10.1.20.11:443 { address 10.1.20.11 } 10.1.20.12:443 { address 10.1.20.12 } 10.1.20.13:443 { address 10.1.20.13 } }
+create ltm virtual https_vs destination 10.1.10.30:443 ip-protocol tcp profiles add { tcp} pool https_pool 
 
-// test
-https://10.1.10.30
+// 4. test 
+curl -kv https://10.1.10.30/hello
 
-// update add persistence cookie
-modify ltm virtual https_virtual profiles add { http { } } persist replace-all-with { custom_cookie } 
+// 5. add cookie persistence
+create ltm persistence cookie custom_cookie cookie-name "demo_cookie" expiration "1:0:0"
+modify ltm virtual https_vs profiles add { http } persist replace-all-with { custom_cookie } 
 
-// test agasin(should be failed)
-https://10.1.10.30
+// 6. test(should failed, due to no decrypt operation implement on lb)
+curl -kv https://10.1.10.30/server_addr.php
 
-// use client ssl profile
-modify ltm virtual https_virtual profiles add { custom_client_ssl { context clientside } serverssl { context serverside } } 
+// 7. enable ssl bridging
+modify ltm virtual https_vs profiles add { custom_client_ssl { context clientside } serverssl { context serverside } } 
 
-// test
-https://10.1.10.30
+// 8. test(add blow link to broswer, refresh several times, the cookie persistence should work)
+https://10.1.10.30/server_addr.php
+
+// 9. clean up
+delete ltm virtual https_vs 
+delete ltm pool https_pool
+delete ltm profile client-ssl custom_client_ssl
+delete ltm persistence cookie custom_cookie
+delete sys crypto cert custom_ssl_cert 
+delete sys crypto key custom_ssl_cert 
 ----
 
-|SSL Offload
-|SSL Offload 可以降低对服务器端计算资源的消耗
+=== SSL Offload
 
-|===
+SSL Offload 可以降低对服务器端计算资源的消耗。
+
+[source, bash]
+.*示例*
+----
+// 1. install cert files
+create sys crypto key example.com key-size 2048 gen-certificate country CN city Beijing state BJ organization 'Example, Inc' ou SE common-name www.example.com email-address k.song@f5.com lifetime 3650
+
+// 2. create a client ssl profile
+create ltm profile client-ssl custom_client_ssl cert example.com key example.com 
+
+// 3. create https vs
+create ltm virtual https_vs destination 10.1.10.30:443 ip-protocol tcp profiles add { tcp { } http { } custom_client_ssl { context clientside } } pool http_pool 
+
+// 4. test
+https://10.1.10.30/server_addr.php
+
+// 5. add cookie persistence
+create ltm persistence cookie custom_cookie cookie-name "demo_cookie" expiration "1:0:0"
+modify ltm virtual https_vs persist replace-all-with { custom_cookie }
+
+// 6. test
+https://10.1.10.30/server_addr.php
+
+// 7. clean up
+delete ltm virtual https_vs
+delete ltm profile client-ssl custom_client_ssl
+delete ltm persistence cookie custom_cookie
+delete sys crypto cert example.com 
+delete sys crypto key example.com 
+----

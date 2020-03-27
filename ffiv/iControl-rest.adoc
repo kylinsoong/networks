@@ -1,0 +1,372 @@
+= iControl REST 
+:toc: manual
+
+== iControl REST Cookbook
+
+=== Virtual Server
+
+[source, json]
+.*1. 创建 VS*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/tm/ltm/virtual -H "Content-Type: application/json" -X POST -d '{"name": "http_vs", "destination": "10.1.10.20:80", "mask": "255.255.255.255", "pool": "http_pool", "ip-protocol": "tcp"}'
+{
+   "kind":"tm:ltm:virtual:virtualstate",
+   "name":"http_vs",
+   "partition":"Common",
+   "fullPath":"/Common/http_vs",
+   "generation":280,
+   "selfLink":"https://localhost/mgmt/tm/ltm/virtual/~Common~http_vs?ver=13.1.3",
+   "addressStatus":"yes",
+   "autoLasthop":"default",
+   "cmpEnabled":"yes",
+   "connectionLimit":0,
+   "destination":"/Common/10.1.10.20:80",
+   "enabled":true,
+   "gtmScore":0,
+   "ipProtocol":"tcp",
+   "mask":"255.255.255.255",
+   "mirror":"disabled",
+   "mobileAppTunnel":"disabled",
+   "nat64":"disabled",
+   "pool":"/Common/http_pool",
+   "poolReference":{
+      "link":"https://localhost/mgmt/tm/ltm/pool/~Common~http_pool?ver=13.1.3"
+   },
+   "rateLimit":"disabled",
+   "rateLimitDstMask":0,
+   "rateLimitMode":"object",
+   "rateLimitSrcMask":0,
+   "serviceDownImmediateAction":"none",
+   "source":"0.0.0.0/0",
+   "sourceAddressTranslation":{
+      "type":"none"
+   },
+   "sourcePort":"preserve",
+   "synCookieStatus":"not-activated",
+   "translateAddress":"enabled",
+   "translatePort":"enabled",
+   "vlansDisabled":true,
+   "vsIndex":5,
+   "policiesReference":{
+      "link":"https://localhost/mgmt/tm/ltm/virtual/~Common~http_vs/policies?ver=13.1.3",
+      "isSubcollection":true
+   },
+   "profilesReference":{
+      "link":"https://localhost/mgmt/tm/ltm/virtual/~Common~http_vs/profiles?ver=13.1.3",
+      "isSubcollection":true
+   }
+}
+----
+
+[source, json]
+.*2. 查看 VS 的详细配置信息*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/tm/ltm/virtual/http_vs
+{
+   "kind":"tm:ltm:virtual:virtualstate",
+   "name":"http_vs",
+   "fullPath":"http_vs",
+   "generation":280,
+   "selfLink":"https://localhost/mgmt/tm/ltm/virtual/http_vs?ver=13.1.3",
+   "addressStatus":"yes",
+   "autoLasthop":"default",
+   "cmpEnabled":"yes",
+   "connectionLimit":0,
+   "destination":"/Common/10.1.10.20:80",
+   "enabled":true,
+   "gtmScore":0,
+   "ipProtocol":"tcp",
+   "mask":"255.255.255.255",
+   "mirror":"disabled",
+   "mobileAppTunnel":"disabled",
+   "nat64":"disabled",
+   "pool":"/Common/http_pool",
+   "poolReference":{
+      "link":"https://localhost/mgmt/tm/ltm/pool/~Common~http_pool?ver=13.1.3"
+   },
+   "rateLimit":"disabled",
+   "rateLimitDstMask":0,
+   "rateLimitMode":"object",
+   "rateLimitSrcMask":0,
+   "serviceDownImmediateAction":"none",
+   "source":"0.0.0.0/0",
+   "sourceAddressTranslation":{
+      "type":"none"
+   },
+   "sourcePort":"preserve",
+   "synCookieStatus":"not-activated",
+   "translateAddress":"enabled",
+   "translatePort":"enabled",
+   "vlansDisabled":true,
+   "vsIndex":5,
+   "policiesReference":{
+      "link":"https://localhost/mgmt/tm/ltm/virtual/~Common~http_vs/policies?ver=13.1.3",
+      "isSubcollection":true
+   },
+   "profilesReference":{
+      "link":"https://localhost/mgmt/tm/ltm/virtual/~Common~http_vs/profiles?ver=13.1.3",
+      "isSubcollection":true
+   }
+}
+----
+
+[source, json]
+.*3. 查看 VS 的 Pool*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/tm/ltm/virtual/http_vs?options=pool
+{
+   "kind":"tm:ltm:virtual:virtualstate",
+   "name":"http_vs",
+   "fullPath":"http_vs",
+   "generation":280,
+   "selfLink":"https://localhost/mgmt/tm/ltm/virtual/http_vs?options=pool&ver=13.1.3",
+   "pool":"/Common/http_pool",
+   "poolReference":{
+      "link":"https://localhost/mgmt/tm/ltm/pool/~Common~http_pool?ver=13.1.3"
+   }
+}
+----
+
+[source, json]
+.*4. 查看 VS 上的流量统计信息*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/tm/ltm/virtual/http_vs/stats
+{
+   "kind":"tm:ltm:virtual:virtualstats",
+   "generation":280,
+   "selfLink":"https://localhost/mgmt/tm/ltm/virtual/http_vs/stats?ver=13.1.3",
+   "entries":{
+      "https://localhost/mgmt/tm/ltm/virtual/http_vs/~Common~http_vs/stats":{
+         "nestedStats":{
+            "kind":"tm:ltm:virtual:virtualstats",
+            "selfLink":"https://localhost/mgmt/tm/ltm/virtual/http_vs/~Common~http_vs/stats?ver=13.1.3",
+            "entries":{
+               "clientside.bitsIn":{
+                  "value":0
+               },
+               "clientside.bitsOut":{
+                  "value":0
+               },
+               "clientside.curConns":{
+                  "value":0
+               },
+               "clientside.evictedConns":{
+                  "value":0
+               },
+               "clientside.maxConns":{
+                  "value":0
+               },
+               "clientside.pktsIn":{
+                  "value":0
+               },
+               "clientside.pktsOut":{
+                  "value":0
+               },
+               "clientside.slowKilled":{
+                  "value":0
+               },
+               "clientside.totConns":{
+                  "value":0
+               },
+               "cmpEnableMode":{
+                  "description":"all-cpus"
+               },
+               "cmpEnabled":{
+                  "description":"enabled"
+               },
+               "csMaxConnDur":{
+                  "value":0
+               },
+               "csMeanConnDur":{
+                  "value":0
+               },
+               "csMinConnDur":{
+                  "value":0
+               },
+               "destination":{
+                  "description":"10.1.10.20:80"
+               },
+               "ephemeral.bitsIn":{
+                  "value":0
+               },
+               "ephemeral.bitsOut":{
+                  "value":0
+               },
+               "ephemeral.curConns":{
+                  "value":0
+               },
+               "ephemeral.evictedConns":{
+                  "value":0
+               },
+               "ephemeral.maxConns":{
+                  "value":0
+               },
+               "ephemeral.pktsIn":{
+                  "value":0
+               },
+               "ephemeral.pktsOut":{
+                  "value":0
+               },
+               "ephemeral.slowKilled":{
+                  "value":0
+               },
+               "ephemeral.totConns":{
+                  "value":0
+               },
+               "fiveMinAvgUsageRatio":{
+                  "value":0
+               },
+               "fiveSecAvgUsageRatio":{
+                  "value":0
+               },
+               "tmName":{
+                  "description":"/Common/http_vs"
+               },
+               "oneMinAvgUsageRatio":{
+                  "value":0
+               },
+               "status.availabilityState":{
+                  "description":"unknown"
+               },
+               "status.enabledState":{
+                  "description":"enabled"
+               },
+               "status.statusReason":{
+                  "description":"The children pool member(s) either don't have service checking enabled, or service check results are not available yet"
+               },
+               "syncookieStatus":{
+                  "description":"not-activated"
+               },
+               "syncookie.accepts":{
+                  "value":0
+               },
+               "syncookie.hwAccepts":{
+                  "value":0
+               },
+               "syncookie.hwSyncookies":{
+                  "value":0
+               },
+               "syncookie.hwsyncookieInstance":{
+                  "value":0
+               },
+               "syncookie.rejects":{
+                  "value":0
+               },
+               "syncookie.swsyncookieInstance":{
+                  "value":0
+               },
+               "syncookie.syncacheCurr":{
+                  "value":0
+               },
+               "syncookie.syncacheOver":{
+                  "value":0
+               },
+               "syncookie.syncookies":{
+                  "value":0
+               },
+               "totRequests":{
+                  "value":0
+               }
+            }
+         }
+      }
+   }
+}
+----
+
+[source, json]
+.*5. 修改 VS*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/tm/ltm/virtual/http_vs -X PATCH -H "Content-Type: application/json" -d '{"disabled": true}'
+{
+   "kind":"tm:ltm:virtual:virtualstate",
+   "name":"http_vs",
+   "fullPath":"http_vs",
+   "generation":281,
+   "selfLink":"https://localhost/mgmt/tm/ltm/virtual/http_vs?ver=13.1.3",
+   "addressStatus":"yes",
+   "autoLasthop":"default",
+   "cmpEnabled":"yes",
+   "connectionLimit":0,
+   "destination":"/Common/10.1.10.20:80",
+   "disabled":true,
+   "gtmScore":0,
+   "ipProtocol":"tcp",
+   "mask":"255.255.255.255",
+   "mirror":"disabled",
+   "mobileAppTunnel":"disabled",
+   "nat64":"disabled",
+   "pool":"/Common/http_pool",
+   "poolReference":{
+      "link":"https://localhost/mgmt/tm/ltm/pool/~Common~http_pool?ver=13.1.3"
+   },
+   "rateLimit":"disabled",
+   "rateLimitDstMask":0,
+   "rateLimitMode":"object",
+   "rateLimitSrcMask":0,
+   "serviceDownImmediateAction":"none",
+   "source":"0.0.0.0/0",
+   "sourceAddressTranslation":{
+      "type":"none"
+   },
+   "sourcePort":"preserve",
+   "synCookieStatus":"not-activated",
+   "translateAddress":"enabled",
+   "translatePort":"enabled",
+   "vlansDisabled":true,
+   "vsIndex":5,
+   "policiesReference":{
+      "link":"https://localhost/mgmt/tm/ltm/virtual/~Common~http_vs/policies?ver=13.1.3",
+      "isSubcollection":true
+   },
+   "profilesReference":{
+      "link":"https://localhost/mgmt/tm/ltm/virtual/~Common~http_vs/profiles?ver=13.1.3",
+      "isSubcollection":true
+   }
+}
+----
+
+[source, json]
+.*6. 删除 VS*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/tm/ltm/virtual/http_vs -X DELETE
+----
+
+=== Virtual Server Profile
+
+[source, json]
+.*1. 查看 VS 管理的 Profiles*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/tm/ltm/virtual/fake_vs/profiles
+{
+   "kind":"tm:ltm:virtual:profiles:profilescollectionstate",
+   "selfLink":"https://localhost/mgmt/tm/ltm/virtual/fake_vs/profiles?ver=13.1.3",
+   "items":[
+      {
+         "kind":"tm:ltm:virtual:profiles:profilesstate",
+         "name":"streaming-node-http-server",
+         "partition":"Common",
+         "fullPath":"/Common/streaming-node-http-server",
+         "generation":169,
+         "selfLink":"https://localhost/mgmt/tm/ltm/virtual/fake_vs/profiles/~Common~streaming-node-http-server?ver=13.1.3",
+         "context":"all"
+      },
+      {
+         "kind":"tm:ltm:virtual:profiles:profilesstate",
+         "name":"tcp",
+         "partition":"Common",
+         "fullPath":"/Common/tcp",
+         "generation":168,
+         "selfLink":"https://localhost/mgmt/tm/ltm/virtual/fake_vs/profiles/~Common~tcp?ver=13.1.3",
+         "context":"all"
+      }
+   ]
+}
+----
+
+[source, json]
+.*2. td*
+----
+{}
+----
+

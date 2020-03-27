@@ -278,6 +278,12 @@ Connections Redirected              0
 
 link:https://www.tcpdump.org/[tcpdump] 是一个开源的抓包工具，可以对 TCP，UDP，ARP 等不同协议的包进行抓取，link:https://www.wireshark.org/[wireshark] 是一个图形化工具，分析展示 link:https://www.tcpdump.org/[tcpdump] 所抓取的包。
 
+=== 常用格式及过滤条件
+
+image:img/tcpdump.format.png[]
+
+=== 快速开始示例
+
 本部分通过 LTM fastl4 Packet 转发模式，echo server 运行在服务器端，echo client 通过 LTM 访问 echo server，fastL4 上设定 `Reset on Timeout` 后在 TCP 连接闲置一段时间后，RST 包后直接关闭，不进行四次握手，这样可以保证，echo client 和 server 之间通信产生的 Packet 足够少(4 个)。 
 
 [source, text]

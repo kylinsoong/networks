@@ -1,0 +1,181 @@
+= Telemetry Streaming 
+:toc: manual
+
+== 什么是 TS
+
+Telemetry Streaming (TS) 是一个 link:iControl.adoc[iControl LX] 的扩展，提供一个独立于 TMOS 的 RPM 包，可以将 BIG-IP 上的统计信息和事件通过声明式、标准化方式转发到外部的消费者平台。支持的第三方平台包括：
+
+* Splunk
+* Microsoft Azure Log Analytics
+* AWS CloudWatch
+* AWS S3
+* Graphite
+* Kafka
+* ElasticSearch
+* Sumo Logic
+* StatsD
+* Generic HTTP
+
+== TS 安装
+
+[source, bash]
+.*1. 下载 RPM  安装包*
+----
+$ wget https://github.com/F5Networks/f5-telemetry-streaming/releases/download/v1.10.0/f5-telemetry-1.10.0-2.noarch.rpm
+$ ls
+f5-telemetry-1.10.0-2.noarch.rpm
+----
+
+[source, json]
+.*2. 上传 & 安装 RPM 包*
+----
+// a. set env
+FN=f5-telemetry-1.10.0-2.noarch.rpm
+CREDS=admin:admin
+IP=10.1.1.245
+LEN=$(wc -c $FN | cut -f 1 -d ' ')
+DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$FN\"}"
+
+// b. upload rpm
+curl -k -u $CREDS https://$IP/mgmt/shared/file-transfer/uploads/$FN -H 'Content-Type: application/octet-stream' -H "Content-Range: 0-$((LEN - 1))/$LEN" -H "Content-Length: $LEN" -H 'Connection: keep-alive' --data-binary @$FN
+{
+   "remainingByteCount":0,
+   "usedChunks":{
+      "0":9988331
+   },
+   "totalByteCount":9988331,
+   "localFilePath":"/var/config/rest/downloads/f5-telemetry-1.10.0-2.noarch.rpm",
+   "temporaryFilePath":"/var/config/rest/downloads/tmp/f5-telemetry-1.10.0-2.noarch.rpm",
+   "generation":0,
+   "lastUpdateMicros":1585210735447714
+}
+
+// c. install rpm
+curl -k -u $CREDS "https://$IP/mgmt/shared/iapp/package-management-tasks" -H "Origin: https://$IP" -H 'Content-Type: application/json;charset=UTF-8' --data $DATA
+{
+   "packageFilePath":"/var/config/rest/downloads/f5-telemetry-1.10.0-2.noarch.rpm",
+   "operation":"INSTALL",
+   "id":"37785762-d022-4e0a-87a8-f1ad93015b2d",
+   "status":"CREATED",
+   "userReference":{
+      "link":"https://localhost/mgmt/shared/authz/users/admin"
+   },
+   "identityReferences":[
+      {
+         "link":"https://localhost/mgmt/shared/authz/users/admin"
+      }
+   ],
+   "ownerMachineId":"ee9f3b24-154c-4c3a-9048-812651779991",
+   "generation":1,
+   "lastUpdateMicros":1585211147230511,
+   "kind":"shared:iapp:package-management-tasks:iapppackagemanagementtaskstate",
+   "selfLink":"https://localhost/mgmt/shared/iapp/package-management-tasks/37785762-d022-4e0a-87a8-f1ad93015b2d"
+}
+
+// d. verifu installation from log
+$ tail /var/log/restnoded/restnoded.log
+Thu, 26 Mar 2020 08:25:48 GMT - finest: [LoaderWorker] triggered at path:  /var/config/rest/iapps/f5-telemetry/nodejs
+Thu, 26 Mar 2020 08:25:48 GMT - finest: [LoaderWorker] triggered at path:  /var/config/rest/iapps/f5-telemetry/nodejs/restWorker.js
+Thu, 26 Mar 2020 08:25:48 GMT - info: [telemetry] Global logLevel set to 'info'
+Thu, 26 Mar 2020 08:26:47 GMT - info: [telemetry] Application version: 1.10.0
+Thu, 26 Mar 2020 08:26:47 GMT - info: [WorkerStateManager] Storage worker reports no key for: /shared/telemetry
+Thu, 26 Mar 2020 08:26:47 GMT - info: [telemetry] Application config loaded
+Thu, 26 Mar 2020 08:26:47 GMT - info: [telemetry] No consumer(s) to load, define in configuration first
+Thu, 26 Mar 2020 08:26:48 GMT - info: [telemetry] 0 consumer plug-in(s) loaded
+Thu, 26 Mar 2020 08:26:48 GMT - config: [RestWorker] /shared/telemetry has started. Name:RestWorker
+Thu, 26 Mar 2020 08:26:48 GMT - info: [WorkerStateManager] Storage worker reports no key for: /shared/telemetry
+----
+
+[source, bash]
+.*3. Uninstall(Optional)*
+----
+curl -k -u admin:admin -X POST https://10.1.1.245/mgmt/shared/iapp/package-management-tasks -d '{ "operation":"UNINSTALL","packageName": "f5-telemetry-1.10.0-2.noarch"}'
+----
+
+[source, json]
+.*4. 查看 telemetry 信息*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/info
+{
+   "nodeVersion":"v4.8.0",
+   "version":"1.10.0",
+   "release":"2",
+   "schemaCurrent":"1.10.0",
+   "schemaMinimum":"0.9.0"
+}
+----
+
+== Elasticsearch/Kibana 安装
+
+[source, bash]
+.*1. Elasticsearch*
+----
+// download
+curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.6.1-darwin-x86_64.tar.gz
+
+// install
+tar -xzvf elasticsearch-7.6.1-darwin-x86_64.tar.gz
+cd elasticsearch-7.6.1
+
+// modify to bind ip
+vim ./config/elasticsearch.yml
+network.host: 192.168.1.5
+http.port: 9200
+discovery.seed_hosts: ["192.168.1.5"]
+
+// start
+./bin/elasticsearch
+
+// verify
+$ curl http://192.168.1.5:9200
+{
+  "name" : "BEI-ML-00005336",
+  "cluster_name" : "elasticsearch",
+  "cluster_uuid" : "Iyd_jWzWRoOPz_QCtvGifw",
+  "version" : {
+    "number" : "7.6.1",
+    "build_flavor" : "default",
+    "build_type" : "tar",
+    "build_hash" : "aa751e09be0a5072e8570670309b1f12348f023b",
+    "build_date" : "2020-02-29T00:15:25.529771Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.4.0",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+----
+
+[source, bash]
+.*2. kibana*
+----
+// download
+curl -L -O https://artifacts.elastic.co/downloads/kibana/kibana-7.6.1-darwin-x86_64.tar.gz
+
+// install
+tar xzvf kibana-7.6.1-darwin-x86_64.tar.gz
+cd kibana-7.6.1-darwin-x86_64
+
+// config
+vim config/kibana.yml 
+elasticsearch.hosts: ["http://192.168.1.5:9200"]
+
+// start
+./bin/kibana
+
+// verify
+http://127.0.0.1:5601
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, json]
+.**
+----
+
+----

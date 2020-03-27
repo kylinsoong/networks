@@ -388,21 +388,82 @@ create ilx workspace node_http_server extension node_http_server
 ----
 
 [source, bash]
-.*2. 执行 `edit ilx workspace node_http_server extension nodehttp_server` 编辑内容如下*
+.*2. 执行 `edit ilx workspace node_http_server extension node_http_server` 编辑内容如下*
 ----
-var http = require('http'); 
+var http = require('http');
+var url = require('url');
 var f5 = require('f5-nodejs');
 
-function httpRequest(req, res)
-{ 
-    console.log("client request method: " + req.method)
-    console.log("client request URL: " + req.url)
-    console.log("client request Headers: " + req.rawHeaders)
-    res.writeHead(200, {'Content-Type': 'text/html', 'Server': 'BIG-IP ILX STREAMING'});
-    res.end("success\n", "ascii"); 
+function customResHeaders(ifGet) {
+
+  var headers = {};
+  var contentType = 'Content-Type';
+  var server = 'Server';
+  var powerby = 'X-Powered-By';
+
+  if(ifGet){
+    headers[contentType] = 'text/html';
+  } else {
+    headers[contentType] = 'application/json';
+  }
+
+  headers[server] = 'BIG-IP ILX STREAMING';
+  headers[powerby] = 'SE';
+
+  return headers;
 }
 
-var plugin = new f5.ILXPlugin(); 
+function randomBody() {
+  return '<body>This is body content</body>';
+}
+
+function httpRequest(req, res)
+{
+  var contents = {};
+
+  // headers
+  const { headers } = req;
+  contents['request-headers'] = headers;
+
+  // body
+  let body = [];
+  req.on('data', (chunk) => {
+    body.push(chunk);
+  }).on('end', () => {
+    body = Buffer.concat(body).toString();
+  });
+  contents['request-body'] = body;
+  
+  // httpVersion
+  contents['httpVersion'] = req.httpVersion;
+
+  // method
+  contents['method'] = req.method;
+
+  // url
+  contents['rawUrl'] = req.url;
+  var parse = url.parse(req.url, true);
+  var urlSplits = {};
+  urlSplits['host'] = parse.host;
+  urlSplits['pathname'] = parse.pathname;
+  urlSplits['search'] = parse.search;
+  contents['url'] = urlSplits;
+  
+  //console.log(req.socket);
+  var contentsJSON = JSON.stringify(contents);
+  console.log(contentsJSON);
+
+  if(req.method == 'GET') {
+    res.writeHead(200, customResHeaders(true));
+    res.write(randomBody(), "ascii");
+    res.end("\n", "ascii");
+  } else {
+    res.writeHead(200, customResHeaders(false));
+    res.end('{status: success}\n', "ascii");
+  }
+}
+
+var plugin = new f5.ILXPlugin();
 plugin.startHttpServer(httpRequest);
 ----
 

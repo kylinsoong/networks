@@ -1,0 +1,218 @@
+= iControl® LX 
+:toc: manual
+
+== 快速开始示例
+
+[source, javaScript]
+.*1. 基于默认模板创建一个 MemoryWorker.js*
+----
+# cp /usr/share/rest/node/src/workers/skeletonWorker.js MemoryWorker.js
+# vim MemoryWorker.js
+:%s/SkeletonWorker/MemoryWorker/g
+----
+
+[source, javaScript]
+.*2. 编辑 MemoryWorker.js*
+----
+MemoryWorker.prototype.WORKER_URI_PATH = "extension/mycompany/memory";
+----
+
+[source, javaScript]
+.*3. 编辑 MemoryWorker.js onGet 方法，返回一个版本号*
+----
+MemoryWorker.prototype.onGet = function(restOperation) {
+
+    var o = new Object();
+    o.version = "1.1";
+    o.Data = this.state.Data;
+    this.logger.info("current version is " + o.version);
+    restOperation.setBody(o);
+    this.completeRestOperation(restOperation);
+};
+----
+
+[source, javaScript]
+.*4. 编辑 MemoryWorker.js onPut 方法*
+----
+MemoryWorker.prototype.onPut = function(restOperation) {
+    var newData = restOperation.getBody().Data;
+    this.state.Data = newData;
+    this.completeRestOperation(restOperation);
+};
+----
+
+[source, javaScript]
+.*5. 编辑 MemoryWorker.js onPost 方法*
+----
+MemoryWorker.prototype.onPost = function(restOperation) {
+    var newData = restOperation.getBody().Data;
+    this.state.Data = newData;
+    this.completeRestOperation(restOperation);
+};
+----
+
+[source, javaScript]
+.*6. 创建一个 iControl LX RPM 包*
+----
+// a. copy js file
+mkdir -p /var/config/rest/iapps/MemoryWorker/nodejs
+cp MemoryWorker.js /var/config/rest/iapps/MemoryWorker/nodejs/
+
+// b. manifest.json
+vim /var/config/rest/iapps/MemoryWorker/nodejs/manifest.json
+{"tags":["PLUGIN"]}
+
+// c. build RPM
+$ curl -k -u admin:admin -X POST https://10.1.1.245/mgmt/shared/iapp/build-package -d '{"appName": "MemoryWorker", "packageVersion": "0.1.0", "packageRelease": "0001"}'
+{
+   "step":"GET_LATEST_BLOCK_STATES_AND_PERSIST_TO_DISK",
+   "packageDirectory":"/var/config/rest/iapps/MemoryWorker",
+   "appName":"MemoryWorker",
+   "packageVersion":"0.1.0",
+   "packageRelease":"0001",
+   "force":true,
+   "rpmDescription":"Default exported iApp description.",
+   "rpmSummary":"Default exported iApp summary.",
+   "id":"16a5791c-ca2f-4c06-a4f4-7e66b4fe6cd7",
+   "status":"CREATED",
+   "userReference":{
+      "link":"https://localhost/mgmt/shared/authz/users/admin"
+   },
+   "identityReferences":[
+      {
+         "link":"https://localhost/mgmt/shared/authz/users/admin"
+      }
+   ],
+   "ownerMachineId":"ee9f3b24-154c-4c3a-9048-812651779991",
+   "generation":1,
+   "lastUpdateMicros":1585203129961395,
+   "kind":"shared:iapp:build-package:buildrpmtaskstate",
+   "selfLink":"https://localhost/mgmt/shared/iapp/build-package/16a5791c-ca2f-4c06-a4f4-7e66b4fe6cd7"
+}
+
+// d. verify the rpm
+$ ls -l /var/config/rest/iapps/RPMS/
+-rw-r--r--. 1 root root 3487 2020-03-26 14:12 MemoryWorker-0.1.0-0001.noarch.rpm
+----
+
+[source, javaScript]
+.*7. 安装 RPM*
+----
+// a. copy
+cp /var/config/rest/iapps/RPMS/MemoryWorker-0.1.0-0001.noarch.rpm /var/config/rest/downloads/
+
+// b. install
+$ curl -k -u admin:admin -X POST https://10.1.1.245/mgmt/shared/iapp/package-management-tasks -d '{ "operation":"INSTALL","packageFilePath": "/var/config/rest/downloads/MemoryWorker-0.1.0-0001.noarch.rpm"}'
+{
+   "packageFilePath":"/var/config/rest/downloads/MemoryWorker-0.1.0-0001.noarch.rpm",
+   "operation":"INSTALL",
+   "id":"bc3d16a5-32c5-4bf3-82ba-38e43a4c4da9",
+   "status":"CREATED",
+   "userReference":{
+      "link":"https://localhost/mgmt/shared/authz/users/admin"
+   },
+   "identityReferences":[
+      {
+         "link":"https://localhost/mgmt/shared/authz/users/admin"
+      }
+   ],
+   "ownerMachineId":"ee9f3b24-154c-4c3a-9048-812651779991",
+   "generation":1,
+   "lastUpdateMicros":1585203844342133,
+   "kind":"shared:iapp:package-management-tasks:iapppackagemanagementtaskstate",
+   "selfLink":"https://localhost/mgmt/shared/iapp/package-management-tasks/bc3d16a5-32c5-4bf3-82ba-38e43a4c4da9"
+}
+
+// c. check install status(copy task id from above step b, selfLink)
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/shared/iapp/package-management-tasks/bc3d16a5-32c5-4bf3-82ba-38e43a4c4da9
+{
+   "packageFilePath":"/var/config/rest/downloads/MemoryWorker-0.1.0-0001.noarch.rpm",
+   "packageName":"MemoryWorker-0.1.0-0001.noarch",
+   "operation":"INSTALL",
+   "packageManifest":{
+      "tags":[
+         "IAPP"
+      ]
+   },
+   "id":"bc3d16a5-32c5-4bf3-82ba-38e43a4c4da9",
+   "status":"FINISHED",
+   "startTime":"2020-03-26T14:24:04.346+0800",
+   "endTime":"2020-03-26T14:24:04.760+0800",
+   "userReference":{
+      "link":"https://localhost/mgmt/shared/authz/users/admin"
+   },
+   "identityReferences":[
+      {
+         "link":"https://localhost/mgmt/shared/authz/users/admin"
+      }
+   ],
+   "ownerMachineId":"ee9f3b24-154c-4c3a-9048-812651779991",
+   "generation":3,
+   "lastUpdateMicros":1585203844765077,
+   "kind":"shared:iapp:package-management-tasks:iapppackagemanagementtaskstate",
+   "selfLink":"https://localhost/mgmt/shared/iapp/package-management-tasks/bc3d16a5-32c5-4bf3-82ba-38e43a4c4da9"
+}
+----
+
+[source, javaScript]
+.*8. 安装完成验证 & REST 方法调运*
+----
+// a. check the noderest log
+# tail -n 3 /var/log/restnoded/restnoded.log
+Thu, 26 Mar 2020 06:24:04 GMT - info: MemoryWorker onStart success
+Thu, 26 Mar 2020 06:24:04 GMT - info: MemoryWorker state loaded: null
+Thu, 26 Mar 2020 06:24:04 GMT - config: [RestWorker] /extension/mycompany/memory has started. Name:MemoryWorker
+
+// b. post
+curl -k -u admin:admin -X POST https://10.1.1.245/mgmt//extension/mycompany/memory -d '{ "Data": "Hello iControl® LX"}'
+
+// c. get
+curl -k -u admin:admin  https://10.1.1.245/mgmt//extension/mycompany/memory
+----
+
+[source, javaScript]
+.*9. Clean up(remove RPM)*
+----
+$ curl -k -u admin:admin -X POST https://10.1.1.245/mgmt/shared/iapp/package-management-tasks -d '{ "operation":"UNINSTALL","packageName": "MemoryWorker-0.1.0-0001.noarch"}'
+{
+   "packageName":"MemoryWorker-0.1.0-0001.noarch",
+   "operation":"UNINSTALL",
+   "id":"c7d75187-6152-46b8-b3e5-ec2839833fa7",
+   "status":"CREATED",
+   "userReference":{
+      "link":"https://localhost/mgmt/shared/authz/users/admin"
+   },
+   "identityReferences":[
+      {
+         "link":"https://localhost/mgmt/shared/authz/users/admin"
+      }
+   ],
+   "ownerMachineId":"ee9f3b24-154c-4c3a-9048-812651779991",
+   "generation":1,
+   "lastUpdateMicros":1585205118498403,
+   "kind":"shared:iapp:package-management-tasks:iapppackagemanagementtaskstate",
+   "selfLink":"https://localhost/mgmt/shared/iapp/package-management-tasks/c7d75187-6152-46b8-b3e5-ec2839833fa7"
+}
+
+// verify uninstall
+$ curl -k -u admin:admin https://10.1.1.245/mgmt//extension/mycompany/memory 
+{
+   "error":{
+      "code":404,
+      "message":"",
+      "innererror":{
+         "referer":"restnoded",
+         "originalRequestBody":"",
+         "errorStack":[
+
+         ]
+      }
+   }
+}
+----
+
+*10. 示例代码*
+
+* https://github.com/f5devcentral/f5-rest-examples/tree/master/icontrollx/
+* link:files/MemoryWorker.js[MemoryWorker.js]
+

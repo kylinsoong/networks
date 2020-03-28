@@ -22,5 +22,6 @@
 ... link:ffiv/ts.adoc[Telemetry Streaming]
 .. link:ffiv/qa.adoc[Q & A]
 . link:nginx/README.adoc[Nginx]
+.. link:nginx/concepts.adoc[入门到精通]
 .. link:nginx/install.adoc[安装]
 .. link:nginx/controller.adoc[Nginx Controller]

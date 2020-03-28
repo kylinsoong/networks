@@ -168,6 +168,132 @@ elasticsearch.hosts: ["http://192.168.1.5:9200"]
 http://127.0.0.1:5601
 ----
 
+== 信息收集
+
+[source, json]
+.*1. Declaration 配置*
+----
+DECLARATION_DATA='{"class":"Telemetry","My_System":{"class":"Telemetry_System","systemPoller":{"interval":60}},"My_Listener":{"class":"Telemetry_Listener","port":6514},"My_Consumer":{"class":"Telemetry_Consumer","type":"ElasticSearch","host":"192.168.1.5","index":"bigipindex","protocol":"http","port":9200,"dataType":"f5.telemetry"}}'
+
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare -H "Content-Type: application/json" -X POST -d $DECLARATION_DATA
+{
+   "message":"success",
+   "declaration":{
+      "class":"Telemetry",
+      "My_System":{
+         "class":"Telemetry_System",
+         "systemPoller":{
+            "interval":60,
+            "enable":true,
+            "actions":[
+               {
+                  "setTag":{
+                     "tenant":"`T`",
+                     "application":"`A`"
+                  },
+                  "enable":true
+               }
+            ]
+         },
+         "enable":true,
+         "host":"localhost",
+         "port":8100,
+         "protocol":"http",
+         "allowSelfSignedCert":false
+      },
+      "My_Listener":{
+         "class":"Telemetry_Listener",
+         "port":6514,
+         "enable":true,
+         "trace":false,
+         "match":"",
+         "actions":[
+            {
+               "setTag":{
+                  "tenant":"`T`",
+                  "application":"`A`"
+               },
+               "enable":true
+            }
+         ]
+      },
+      "My_Consumer":{
+         "class":"Telemetry_Consumer",
+         "type":"ElasticSearch",
+         "host":"192.168.1.5",
+         "index":"bigipindex",
+         "protocol":"http",
+         "port":9200,
+         "dataType":"f5.telemetry",
+         "enable":true,
+         "trace":false,
+         "allowSelfSignedCert":false
+      },
+      "schemaVersion":"1.10.0"
+   }
+}
+----
+
+[source, json]
+.*2. Declaration 只配置 Listener，不配置 Poller*
+----
+DECLARATION_DATA='{"class":"Telemetry","My_Listener":{"class":"Telemetry_Listener","port":6514},"My_Consumer":{"class":"Telemetry_Consumer","type":"ElasticSearch","host":"192.168.1.5","index":"bigipindex","protocol":"http","port":9200,"dataType":"f5.telemetry"}}'
+
+curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare -H "Content-Type: application/json" -X POST -d $DECLARATION_DATA
+----
+
+=== request-log
+
+[source, bash]
+.*1. 配置 VS 发送日志*
+----
+// create pool
+create ltm pool telemetry-local monitor tcp members replace-all-with { 10.1.1.245:6514 }
+
+// create Request Log Profile
+create ltm profile request-log telemetry request-log-pool telemetry-local request-log-protocol mds-tcp request-logging enabled request-log-template event_source=\"request_logging\",hostname=\"$BIGIP_HOSTNAME\",client_ip=\"$CLIENT_IP\",server_ip=\"$SERVER_IP\",http_method=\"$HTTP_METHOD\",http_uri=\"$HTTP_URI\",virtual_name=\"$VIRTUAL_NAME\",event_timestamp=\"$DATE_HTTP\"
+
+// attach to vs
+modify ltm virtual http_vs profiles add { telemetry { context all } }
+----
+
+[source, json]
+.*2. 测试*
+----
+for i in {1..20} ; do curl http://10.1.10.20/hello ; done
+----
+
+*3. 查看 Kibana 里收集到的数据*
+
+image:img/kibana-discover-document-list.png[]
+
+[source, json]
+----
+{
+  "_index": "bigipindex",
+  "_type": "f5.telemetry",
+  "_id": "rKWYGnEBKr826GuRoEos",
+  "_version": 1,
+  "_score": 0,
+  "_source": {
+    "data": {
+      "event_source": "request_logging",
+      "hostname": "bigip.example.com",
+      "client_ip": "10.1.10.1",
+      "server_ip": "10.1.20.11",
+      "http_method": "",
+      "http_uri": "",
+      "virtual_name": "/Common/http_pool",
+      "event_timestamp": "2020-03-27T05:53:31.000Z",
+      "tenant": "Common"
+    },
+    "telemetryEventCategory": "LTM"
+  }
+}
+----
+
+=== TD
+
 [source, bash]
 .**
 ----

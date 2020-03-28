@@ -1,0 +1,106 @@
+= NGINX 入门到精通
+:toc: manual
+
+== 概念
+
+=== 什么是 NGINX
+
+*Igor Sysoev* 于 2004 年开源的一个项目，最初该项目主要要解决的是 *C10K问题*（超过 10,000 个并发连接处理的问题）；后来 NGINX 公司成立，持续开发并创立了一个商业版本 *NGINX Plus*。
+
+Nginx 主要有三种使用场景：
+
+1. *高性能 web 服务器* - 目前超过 50% 的 TOP 1000 网站使用 Nginx。
+2. *反向代理* - SSL/TLS Termination，Content caching and compression
+3。*负载均衡*
+
+=== NGINX vs. Apache
+
+|===
+|NGINX |Apache
+
+|NGINX configuration language — directive based
+|Apache configuration language — directive based
+
+|One processing method
+|Multiple processing methods
+
+|Supports dynamic, third-party modules
+|Supports dynamic, third-party modules
+
+|Similar performance for dynamic content
+|Similar performance for dynamic content
+
+|Faster for serving static files
+|Slower for serving static files
+
+|No concept equivalent to .htaccess files
+|Concept of .htaccess files for directory localized configuration
+|===
+
+=== NGINX vs. NGINX Plus
+
+https://www.nginx.com/products/nginx/
+
+== 安装
+
+=== Installing NGINX on CentOS 7
+
+[source, bash]
+.*1. 创建 `/etc/yum.repos.d/nginx.repo` 内容如下*
+----
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/mainline/centos/7/$basearch/
+gpgcheck=0
+enabled=1
+----
+
+NOTE: 如果选择安装 `stable` 则修改 baseurl 为 http://nginx.org/packages/stable/centos/7/$basearch/
+
+[source, bash]
+.*2. 安装*
+----
+yum update -y
+yum install -y nginx
+----
+
+[source, bash]
+.*3. 开机启动*
+----
+systemctl start nginx && systemctl enable nginx && systemctl status nginx
+----
+
+*4. 访问测试*
+
+image:img/nginx-welcom.png[]
+
+=== Installing NGINX on Ubuntu 16.04
+
+
+== Web Server
+
+
+== Reverse Proxy
+
+
+
+== Load Balancer
+
+
+== 安全
+
+
+== 运维
+
+
+=== Logging
+
+
+=== 性能调优
+
+
+[source, bash]
+.**
+----
+
+----

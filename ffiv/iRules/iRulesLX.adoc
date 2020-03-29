@@ -469,6 +469,10 @@ plugin.startHttpServer(httpRequest);
 
 NOTE: link:https://nodejs.org/api/http.html[https://nodejs.org/api/http.html] 为 `http` module API 文档。
 
+NOTE: 如果 extension 中 JS 有读写文件的需要，除了在界面上编辑添加 `Extension file` 外，还可以直接拷贝文件到 `/var/ilx/workspaces/Common/<PLUGIN>/extensions/<EXTENSION>`
+
+NOTE: 相关文件: link:files/index.js[index.js]，link:files/template.html[template.html]，link:files/additional-response-headers.json[additional-response-headers.json]
+
 [source, bash]
 .*3. 创建 ilx plugin*
 ----

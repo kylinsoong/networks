@@ -168,10 +168,10 @@ elasticsearch.hosts: ["http://192.168.1.5:9200"]
 http://127.0.0.1:5601
 ----
 
-== 信息收集
+== Declaration 配置
 
 [source, json]
-.*1. Declaration 配置*
+.*1. 标准配置（Poller，Listener, Consumer）*
 ----
 DECLARATION_DATA='{"class":"Telemetry","My_System":{"class":"Telemetry_System","systemPoller":{"interval":60}},"My_Listener":{"class":"Telemetry_Listener","port":6514},"My_Consumer":{"class":"Telemetry_Consumer","type":"ElasticSearch","host":"192.168.1.5","index":"bigipindex","protocol":"http","port":9200,"dataType":"f5.telemetry"}}'
 
@@ -242,6 +242,49 @@ DECLARATION_DATA='{"class":"Telemetry","My_Listener":{"class":"Telemetry_Listene
 curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare -H "Content-Type: application/json" -X POST -d $DECLARATION_DATA
 ----
 
+[source, json]
+.*3. 查看当前已配置的 Declaration*
+----
+$ curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare 
+{
+   "message":"success",
+   "declaration":{
+      "class":"Telemetry",
+      "My_Listener":{
+         "class":"Telemetry_Listener",
+         "port":6514,
+         "enable":true,
+         "trace":false,
+         "match":"",
+         "actions":[
+            {
+               "setTag":{
+                  "tenant":"`T`",
+                  "application":"`A`"
+               },
+               "enable":true
+            }
+         ]
+      },
+      "My_Consumer":{
+         "class":"Telemetry_Consumer",
+         "type":"ElasticSearch",
+         "host":"192.168.1.5",
+         "index":"bigipindex",
+         "protocol":"http",
+         "port":9200,
+         "dataType":"f5.telemetry",
+         "enable":true,
+         "trace":false,
+         "allowSelfSignedCert":false
+      },
+      "schemaVersion":"1.10.0"
+   }
+}
+----
+
+== 信息收集
+
 === request-log
 
 [source, bash]
@@ -292,16 +335,42 @@ image:img/kibana-discover-document-list.png[]
 }
 ----
 
-=== TD
+=== Log Publisher
 
-[source, bash]
-.**
+[source, text]
+.*1. Per-App BIG-IP VE 上执行*
+----
+# ip -6 a s tmm scope link
+7: tmm: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9282 state UNKNOWN qlen 1
+    inet6 fe80::298:76ff:fe54:3210/64 scope link 
+       valid_lft forever preferred_lft forever
 ----
 
+NOTE: 记录 IPv6 地址 `fe80::298:76ff:fe54:3210`，后续操作会使用此地址。
+
+[source, json]
+.*2. 创建一个 telemetry pool*
+----
+create ltm pool telemetry members replace-all-with { fe80::298:76ff:fe54:3210.6514}
+----
+
+[source, bash]
+.*3. 创建 Log Destination*
+----
+create sys log-config destination remote-high-speed-log telemetry_hsl protocol tcp pool-name telemetry
 ----
 
 [source, json]
-.**
+.*4. 创建 Log Publisher*
+----
+create sys log-config publisher telemetry_publisher destinations replace-all-with { telemetry_hsl } 
 ----
 
+[source, bash]
+.*5. 创建 Log Filter*
 ----
+create sys log-config filter my-mcpd-filter source mcpd level info publisher telemetry_publisher
+----
+
+* https://www.elastic.co/blog/f5-high-speed-logging-with-elastic-stack
+* https://devcentral.f5.com/s/question/0D51T00006i7edH/f5-kibana-integration

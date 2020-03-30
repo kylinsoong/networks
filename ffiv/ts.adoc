@@ -119,9 +119,11 @@ cd elasticsearch-7.6.1
 
 // modify to bind ip
 vim ./config/elasticsearch.yml
+node.name: node-1
 network.host: 192.168.1.5
 http.port: 9200
 discovery.seed_hosts: ["192.168.1.5"]
+cluster.initial_master_nodes: ["node-1"]
 
 // start
 ./bin/elasticsearch
@@ -374,3 +376,52 @@ create sys log-config filter my-mcpd-filter source mcpd level info publisher tel
 
 * https://www.elastic.co/blog/f5-high-speed-logging-with-elastic-stack
 * https://devcentral.f5.com/s/question/0D51T00006i7edH/f5-kibana-integration
+
+=== syslog 
+
+[source, text]
+----
+# edit sys syslog all-properties
+sys syslog {
+    auth-priv-from notice
+    auth-priv-to emerg
+    clustered-host-slot enabled
+    clustered-message-slot disabled
+    console-log enabled
+    cron-from warning
+    cron-to emerg
+    daemon-from notice
+    daemon-to emerg
+    description none
+    include "
+        filter f_remote_loghost {
+            level(info..emerg);  #filter your syslog level
+        };
+        destination d_remote_loghost {
+            udp(\"127.0.0.1\" port(6514));
+        };
+        log {
+            source(s_syslog_pipe);
+            filter(f_remote_loghost);
+            destination(d_remote_loghost);
+        };
+        log {
+            source(s_ilx);   #
+            destination(d_remote_loghost);
+        };
+    "
+    iso-date disabled
+    kern-from debug
+    kern-to emerg
+    local6-from notice
+    local6-to emerg
+    mail-from notice
+    mail-to emerg
+    messages-from notice
+    messages-to warning
+    remote-servers none
+    user-log-from notice
+    user-log-to emerg
+}
+----
+

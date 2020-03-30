@@ -93,6 +93,109 @@ delete ilx plugin rpc
 delete ilx workspace rpc 
 ----
 
+=== RPC - Data Format
+
+本示例通过 RPC 方法调运对 HTTP 返回的 Header 和 Body 进行格式化处理。
+
+[source, bash]
+.*1. 创建 ilx workspace 及 extension*
+----
+create ilx workspace rpc_http_response_format
+create ilx workspace rpc_http_response_format extension response_format
+----
+
+[source, bash]
+.*2. 执行 `edit ilx workspace rpc_http_response_format extension response_format` 编辑内容如下*
+----
+var fs = require('fs');
+var f5 = require('f5-nodejs');
+
+var server = new f5.ILXServer();
+
+server.addMethod("getFormatedResponseHeaders", function(req, res) {
+  
+  var headers = JSON.parse(fs.readFileSync('additional-response-headers.json', 'utf8'));
+  var keys = Object.keys(headers);
+  var isFirst = false;
+  var results = "";
+  for (var i = 0; i < keys.length; i++) {
+    if(isFirst) {
+      results = results + " ";
+    } else {
+      isFirst = true;
+    }
+    results = results + (keys[i] + " \"" + headers[keys[i]] + "\"");
+  }
+  
+  res.reply(results);
+});
+
+function randomBody() {
+  return '<body>This is body content</body>';
+}
+
+server.addMethod("getFormatedResponseBody", function(req, res) {
+  
+  fs.readFile('template.html', "utf8", function(err, data) {
+      if (err) {
+          res.reply(randomBody());
+      } else {
+          res.reply(data);
+      }
+  });
+});
+
+server.listen();
+----
+
+[source, json]
+.*3. 执行 `edit ilx workspace rpc_http_response_format file extensions/response_format/additional-response-headers.json` 编辑内容如下*
+----
+{
+    "Server": "BIG-IP ILX STREAMING", 
+    "Content-Type": "text/html",
+    "X-Powered-By": "SE", 
+    "Access-Control-Allow-Origin": "*"
+}
+----
+
+[source, html]
+.*4. 执行 `edit ilx workspace rpc_http_response_format file extensions/response_format/template.html` 编辑内容如下*
+----
+<html>
+  <title>My Title</title>
+  <body>
+    <h1>My Header</h1>
+    <p>My paragraph.</p>
+  </body>
+</html>
+----
+
+[source, bash]
+.*5. 执行 `edit ilx workspace rpc_http_response_format rule response_format` 编辑内容如下*
+----
+when HTTP_REQUEST {
+    set plugin [ILX::init http_response_format response_format]
+    set rb [ILX::call $plugin getFormatedResponseBody]
+    HTTP::respond 200 -version 1.1 content "$rb" noserver Server "BIG-IP ILX STREAMING" Content-Type "text/html" X-Powered-By "SE" Access-Control-Allow-Origin "*"
+}
+----
+
+[source, bash]
+.*6. 创建 ilx plugin*
+----
+create ilx plugin http_response_format from-workspace rpc_http_response_format
+----
+
+[source, json]
+.*7. 关联到 VS 测试*
+----
+create ltm virtual sample_vs destination 10.1.10.50:80 ip-protocol tcp profiles add { tcp http } rules { http_response_format/response_format }
+
+// test
+curl -v http://10.1.10.50
+----
+
 === Streaming - Data pass through
 
 The following is a sample streaming plugin that acts as a pass through. Data is read from the client and sent to the server. Data is read from the server and sent to the client. 

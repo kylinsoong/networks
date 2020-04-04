@@ -14,6 +14,7 @@
 .. link:ffiv/dns.adoc[DNS]
 .. link:ffiv/iRules/README.adoc[iRules]
 ... link:ffiv/iRules/iRulesLX.adoc[iRulesLX]
+... link:ffiv/iRules/lab2.adoc[源端口透传]
 ... link:ffiv/iRules/lab1.adoc[LAB - iRules, iRulesLX]
 .. link:ffiv/networking.adoc[Networking]
 .. link:ffiv/intergration.adoc[监控 & 集成]

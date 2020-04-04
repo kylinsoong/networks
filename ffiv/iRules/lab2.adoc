@@ -1,0 +1,33 @@
+= SNAT 源端口透视
+:toc: manual
+
+== 准备 VS
+
+[source, bash]
+----
+// create vs
+create ltm pool snat_pool members add { 10.1.20.11:80 { address 10.1.20.11 } 10.1.20.12:80 { address 10.1.20.12 } }
+create ltm virtual snat_vs destination 10.1.10.60:80 ip-protocol tcp profiles add { http } pool snat_pool 
+create ltm snat custom_snat origins add { 10.1.10.0/24 } translation 10.1.20.201
+
+// check the snat is effect
+
+----
+
+== 创建 iRules
+
+[source, bash]
+----
+when HTTP_REQUEST {
+
+    # Option 1: base on standard http request fields, the syntax looks 
+    #               Forwarded: key=value;key=value
+    #           the recommended key are by, for, host, proto etc。
+    #           semicolon are used to split multiple key/value pair  
+    HTTP::header insert Forwarded "for=[IP::client_addr];port=[TCP::client_port]"
+    
+    # Option 2: base on individual organization standard, some intetnet company use X-Forwarded-Port,
+    #           but this not a standard http request fields
+    HTTP::header insert X-Forwarded-Port [TCP::client_port]
+}
+----

@@ -1,6 +1,6 @@
 = datetime
 
-NOTE: datetime 已融合到 link:echo/README.adoc[echo] 里，link:echo/README.adoc[echo] 有 datetime 功能，详细参考 link:echo/README.adoc[echo]。
+NOTE: datetime 已融合到 link:../echo/README.adoc[echo] 里，link:../echo/README.adoc[echo] 有 datetime 功能，详细参考 link:../echo/README.adoc[echo]。
 
 daytime 是简单的客户端服务器端通信的工具，通过 Socket 5000 端口提供服务器端时间信息：
 

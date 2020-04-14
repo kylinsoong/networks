@@ -296,7 +296,7 @@ $ curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare
 create ltm pool telemetry-local monitor tcp members replace-all-with { 10.1.1.245:6514 }
 
 // create Request Log Profile
-create ltm profile request-log telemetry request-log-pool telemetry-local request-log-protocol mds-tcp request-logging enabled request-log-template event_source=\"request_logging\",hostname=\"$BIGIP_HOSTNAME\",client_ip=\"$CLIENT_IP\",server_ip=\"$SERVER_IP\",http_method=\"$HTTP_METHOD\",http_uri=\"$HTTP_URI\",virtual_name=\"$VIRTUAL_NAME\",event_timestamp=\"$DATE_HTTP\"
+create ltm profile request-log telemetry request-log-pool telemetry-local request-log-protocol mds-tcp request-logging enabled request-log-template event_source=\"request_logging\",client_ip=\"$CLIENT_IP\",client_port=\"$CLIENT_PORT\",server_ip=\"$SERVER_IP\",server_port=\"$VIRTUAL_PORT\",http_version=\"$HTTP_VERSION\",http_request=\"$HTTP_REQUEST\",http_method=\"$HTTP_METHOD\",http_uri=\"$HTTP_URI\",http_path=\"$HTTP_PATH\",http_query=\"$HTTP_QUERY\",virtual_name=\"$VIRTUAL_NAME\",event_timestamp=\"$DATE_HTTP\"
 
 // attach to vs
 modify ltm virtual http_vs profiles add { telemetry { context all } }

@@ -58,7 +58,12 @@ public class TCPClient implements CommandLineRunner {
 			
 			socket.close();
 			
-		}
+		} else {
+
+                        SocketAddress address = new InetSocketAddress(host, port);
+                        Socket socket = new Socket();
+                        socket.connect(address, 2000);
+                }
 
 		System.out.println("\nPress \"ENTER\" to continue...");
 		Scanner scanner = new Scanner(System.in);

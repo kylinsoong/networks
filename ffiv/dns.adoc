@@ -227,15 +227,15 @@ image:img/gtm-1st-example.png[]
 ----
 // vs 1
 create ltm pool http_pool_1 members add { 10.1.20.11:80 { address 10.1.20.11 } 10.1.20.12:80 { address 10.1.20.12 } 10.1.20.13:80 { address 10.1.20.13 } }
-create ltm virtual vs_1 destination 10.1.10.20:80 ip-protocol tcp pool http_pool_1 
+create ltm virtual vs_1 destination 10.1.10.40:80 ip-protocol tcp pool http_pool_1 
 
 // vs 2
 create ltm pool http_pool_2 members add { 10.1.20.14:80 { address 10.1.20.14 } 10.1.20.15:80 { address 10.1.20.15 } }
-create ltm virtual vs_2 destination 10.1.10.21:80 ip-protocol tcp pool http_pool_2
+create ltm virtual vs_2 destination 10.1.10.41:80 ip-protocol tcp pool http_pool_2
 
 // verify vs 1 and 2
-curl http://10.1.10.20/hello
-curl http://10.1.10.21/hello
+curl http://10.1.10.40/hello
+curl http://10.1.10.41/hello
 ----
 
 [source, bash]
@@ -266,7 +266,7 @@ show gtm datacenter BJ_DC
 create gtm server BJ_DC_DNS datacenter BJ_DC devices add { dns.example.com { addresses add { 10.1.10.240 } } } monitor bigip
 
 // create ltm server
-create gtm server BJ_DC_LTM datacenter BJ_DC devices add { ltm.example.com { addresses add { 10.1.10.245 } } } monitor bigip virtual-servers add { service_vs_1 { destination 10.1.10.20:80 } service_vs_2 { destination 10.1.10.21:80 } } 
+create gtm server BJ_DC_LTM datacenter BJ_DC devices add { ltm.example.com { addresses add { 10.1.10.245 } } } monitor bigip virtual-servers add { service_vs_1 { destination 10.1.10.40:80 } service_vs_2 { destination 10.1.10.41:80 } } 
 
 // 登录 DNS，执行如下命令完成，证书交换
 bigip_add 10.1.10.245 
@@ -278,7 +278,7 @@ bigip_add 10.1.10.245
 ----
 
 [source, bash]
-.*5. 创建 Pool*
+.*5. 创建 a 记录 Pool*
 ----
 create gtm pool a bj_service_pool_1 members add { BJ_DC_LTM:service_vs_1}
 create gtm pool a bj_service_pool_2 members add { BJ_DC_LTM:service_vs_2 }
@@ -293,20 +293,19 @@ create gtm wideip a example.com pools add { bj_service_pool_1 bj_service_pool_2 
 [source, bash]
 .*7. 测试*
 ----
-$ dig @10.1.10.50 www.example.com +short
-10.1.10.20
-----
-
-== TD
-
-[source, bash]
-.**
-----
-
+$ dig @10.1.10.50 example.com +short
+10.1.10.41
+10.1.10.40
 ----
 
 [source, bash]
-.**
+.*8. 创建 cname pool*
+----
+create gtm pool cname bj_service_cname members add { example.com }
+----
+
+[source, bash]
+.*9. 创建 Wideip 指向 cname pool*
 ----
 
 ----

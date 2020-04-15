@@ -237,9 +237,9 @@ $ curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare -H "Co
 ----
 
 [source, json]
-.*2. Declaration 只配置 Listener，不配置 Poller*
+.*2. Declaration 只配置 Listener，不配置 Poller(systemPoller 设定为 disable)*
 ----
-DECLARATION_DATA='{"class":"Telemetry","My_Listener":{"class":"Telemetry_Listener","port":6514},"My_Consumer":{"class":"Telemetry_Consumer","type":"ElasticSearch","host":"192.168.1.5","index":"bigipindex","protocol":"http","port":9200,"dataType":"f5.telemetry"}}'
+DECLARATION_DATA='{"class":"Telemetry","My_System":{"class":"Telemetry_System","systemPoller":{"interval":300,"enable":false}},"My_Listener":{"class":"Telemetry_Listener","port":6514},"My_Consumer":{"class":"Telemetry_Consumer","type":"ElasticSearch","host":"192.168.1.8","index":"bigipindex","protocol":"http","port":9200,"dataType":"f5.telemetry"}}'
 
 curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare -H "Content-Type: application/json" -X POST -d $DECLARATION_DATA
 ----
@@ -285,7 +285,24 @@ $ curl -k -u admin:admin https://10.1.1.245/mgmt/shared/telemetry/declare
 }
 ----
 
+
 == 信息收集
+
+=== System poller
+
+当 telemetryEventCategory 为 *systemInfo* 时 System poller 会按照一个周期，循环收集 BIG-IP 系统数据配置数据和运行状态数据，具体收集的配置项数据和运行指标数据有1500 多项，分为如下几个大类：
+
+* system
+* virtualServers
+* pools
+* Policies
+* Profiles
+* Certs
+* networks
+* devices
+* iRules
+
+link:files/ts-systempoller.json[完整示例]
 
 === request-log
 

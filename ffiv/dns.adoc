@@ -295,7 +295,6 @@ create gtm wideip a example.com pools add { bj_service_pool_1 bj_service_pool_2 
 ----
 $ dig @10.1.10.50 example.com +short
 10.1.10.41
-10.1.10.40
 ----
 
 [source, bash]
@@ -307,13 +306,14 @@ create gtm pool cname bj_service_cname members add { example.com }
 [source, bash]
 .*9. 创建 Wideip 指向 cname pool*
 ----
-
+create gtm wideip cname test.com pools add { bj_service_cname } 
 ----
 
 [source, bash]
-.**
+.*10. 测试*
 ----
-
+$ dig test.com cname @10.1.10.50 +short
+example.com.
 ----
 
 [source, bash]

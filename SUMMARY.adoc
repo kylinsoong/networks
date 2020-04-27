@@ -26,3 +26,7 @@
 .. link:nginx/concepts.adoc[入门到精通]
 .. link:nginx/install.adoc[安装]
 .. link:nginx/controller.adoc[Nginx Controller]
+. link:paas/README.adoc[PaaS]
+.. link:paas/cis.adoc[CIS]
+... link:paas/case.adoc[用例]
+

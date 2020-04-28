@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: k8s-bigip-ctlr-deployment
-  namespace: bigip-ctlr
+  name: k8s-bigip-ctlr
+  namespace: kube-system
   labels:
-    app: k8s-bigip-ctlr-deployment
+    app: k8s-bigip-ctlr
 spec:
   replicas: 1
   selector:
@@ -36,7 +36,7 @@ spec:
             "--bigip-username=$(BIGIP_USERNAME)",
             "--bigip-password=$(BIGIP_PASSWORD)",
             "--bigip-url=192.168.1.8",
+            "--insecure=true",
             "--bigip-partition=k8s",
-            "--pool-member-type=nodeport",
-            "--agent=as3",
+            "--pool-member-type=cluster"
             ]

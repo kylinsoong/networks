@@ -116,10 +116,10 @@ kubectl create -f rbac-broadest.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: k8s-bigip-ctlr-deployment
+  name: k8s-bigip-ctlr
   namespace: kube-system
   labels:
-    app: k8s-bigip-ctlr-deployment
+    app: k8s-bigip-ctlr
 spec:
   replicas: 1
   selector:
@@ -151,13 +151,10 @@ spec:
             "--bigip-username=$(BIGIP_USERNAME)",
             "--bigip-password=$(BIGIP_PASSWORD)",
             "--bigip-url=192.168.1.8",
+            "--insecure=true",
             "--bigip-partition=k8s",
-            "--pool-member-type=nodeport",
-            "--agent=as3",
+            "--pool-member-type=cluster"
             ]
-      imagePullSecrets:
-        - name: f5-docker-images
-        - name: bigip-login
 ----
 
 [source, bash]
@@ -170,7 +167,7 @@ kubectl create -f deployments.yaml
 .*3. 验证*
 ----
 $ kubectl get pods -n bigip-ctlr --no-headers -o wide
-k8s-bigip-ctlr-deployment-7b869df6b6-fnqwt   1/1   Running   0     90s   192.168.251.33   machine02.example.com
+k8s-bigip-ctlr-7b869df6b6-fnqwt   1/1   Running   0     90s   192.168.251.33   machine02.example.com
 ----
 
 *4. 相关 YAML 下载*
@@ -222,10 +219,10 @@ spec:
 EOF
 
 // create
-kubectl create -f mysql.yaml -n bigip-ctlr
+kubectl create -f mysql.yaml
 
 // create svc
-kubectl expose deployment mysql --port=3306 --target-port=3306 --name=mysql-svc -n bigip-ctlr
+kubectl expose deployment mysql --port=3306 --target-port=3306 --name=mysql-svc --type=NodePort
 
 // view the details of created svc
 # kubectl get svc mysql-svc mysql.yaml -o yaml -n bigip-ctlr

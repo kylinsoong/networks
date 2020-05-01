@@ -223,183 +223,170 @@ kubectl create -f mysql.yaml
 
 // create svc
 kubectl expose deployment mysql --port=3306 --target-port=3306 --name=mysql-svc --type=NodePort
-
-// view the details of created svc
-# kubectl get svc mysql-svc mysql.yaml -o yaml -n bigip-ctlr
-apiVersion: v1
-items:
-- apiVersion: v1
-  kind: Service
-  metadata:
-    creationTimestamp: "2020-04-22T08:59:31Z"
-    labels:
-      app: mysql
-    name: mysql-svc
-    namespace: default
-    resourceVersion: "2414457"
-    selfLink: /api/v1/namespaces/default/services/mysql-svc
-    uid: 582523f9-23de-439b-b2a1-7c953f783440
-  spec:
-    clusterIP: 10.100.125.234
-    ports:
-    - port: 3306
-      protocol: TCP
-      targetPort: 3306
-    selector:
-      app: mysql
-    sessionAffinity: None
-    type: ClusterIP
 ----
 
 [source, yaml]
-.*2. 部署 ConfigMap*
+.*2. ConfigMap 下发 VS*
 ----
 // prepare yaml
-cat <<EOF > ./mysql-svc-cm.yaml
+cat <<EOF > ./cm-mysql.yaml
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: mysql.vs
+  name: mysql
   labels:
     f5type: virtual-server
 data:
   schema: "f5schemadb://bigip-virtual-server_v0.1.7.json"
-  data: |
+  data: |-
     {
       "virtualServer": {
-        "backend": {
-          "servicePort": 3306,
-          "serviceName": "mysql-svc"
-        },
         "frontend": {
-          "virtualAddress": {
-            "port": 3306,
-            "bindAddr": "10.1.10.60"
-          },
+          "balance": "round-robin",
+          "mode": "tcp",
           "partition": "k8s",
-          "balance": "least-connections-member",
-          "mode": "tcp"
+          "virtualAddress": {
+            "bindAddr": "10.1.10.60",
+            "port": 3306
+          }
+        },
+        "backend": {
+          "serviceName": "mysql-svc",
+          "servicePort": 3306
+        }
+      }
+    }
 EOF
 
 // create
-kubectl create -f mysql-svc-cm.yaml -n bigip-ctlr
+kubectl create -f cm-mysql.yaml 
 ----
+
+[source, yaml]
+.*3. TMSH 查看创建的 VS*
+----
+# cd /k8s/
+# list ltm virtual
+ltm virtual default_mysql {
+    creation-time 2020-05-02:09:20:00
+    destination 10.1.10.60%0:mysql
+    ip-protocol tcp
+    last-modified-time 2020-05-02:09:20:00
+    mask 255.255.255.255
+    metadata {
+        user_agent {
+            value k8s-bigip-ctlr-1.14.0-n2285-661543171
+        }
+    }
+    partition k8s
+    pool cfgmap_default_mysql_mysql-svc
+    profiles {
+        /Common/tcp { }
+    }
+    source 0.0.0.0/0
+    source-address-translation {
+        type automap
+    }
+    translate-address enabled
+    translate-port enabled
+    vs-index 10
+}
+----
+
+[source, yaml]
+.*4. Clean up*
+----
+kubectl delete -f cm-mysql.yaml
+kubectl delete -f mysql.yaml
+kubectl delete svc mysql-svc
+----
+
 
 === L7
 
 [source, yaml]
 .*1. 部署测试容器*
 ----
-cat <<EOF > ./web.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: f5-hello-world
-  namespace: bigip-ctlr
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: f5-hello-world
-  template:
-    metadata:
-      labels:
-        app: f5-hello-world
-    spec:
-      containers:
-      - env:
-        - name: service_name
-          value: f5-hello-world
-        image: f5devcentral/f5-hello-world:latest
-        imagePullPolicy: Always
-        name: f5-hello-world
-        ports:
-        - containerPort: 80
-          protocol: TCP
-EOF
+kubectl create deployment demo-app --image='registry.example.com:5443/f5-hello-world:latest'
+kubectl expose deployment demo-app --port=80 --target-port=80 --type=NodePort --name=demo-app-svc
+kubectl scale deployments demo-app --replicas=3
 ----
 
 [source, yaml]
-.*2. 创建服务*
+.*2. ConfigMap 下发 VS*
 ----
-cat <<EOF > ./web-svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: f5-hello-world
-  namespace: bigip-ctlr
-  labels:
-    app: f5-hello-world
-    cis.f5.com/as3-tenant: AS3
-    cis.f5.com/as3-app: f5-hello-world
-    cis.f5.com/as3-pool: web_pool
-spec:
-  ports:
-  - name: f5-hello-world
-    port: 80
-    protocol: TCP
-    targetPort: 80
-  type: NodePort
-  selector:
-    app: f5-hello-world
-EOF:
-----
-
-[source, yaml]
-.*3. 配置 BIG-IP* 
-----
-$ cat <<EOF > ./web-cm.yaml
+cat <<EOF > ./cm-web.yaml
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: f5-as3-declaration
-  namespace: bigip-ctlr
+  name: demo-app
   labels:
     f5type: virtual-server
-    as3: "true"
 data:
-  template: |
+  schema: "f5schemadb://bigip-virtual-server_v0.1.7.json"
+  data: |-
     {
-        "class": "AS3",
-        "declaration": {
-            "class": "ADC",
-            "schemaVersion": "3.10.0",
-            "id": "urn:uuid:33045210-3ab8-4636-9b2a-c98d22ab915d",
-            "label": "http",
-            "remark": "A1 example",
-            "AS3": {
-                "class": "Tenant",
-                "A1": {
-                    "class": "Application",
-                    "template": "http",
-                    "serviceMain": {
-                        "class": "Service_HTTP",
-                        "virtualAddresses": [
-                            "10.1.10.100"
-                        ],
-                        "pool": "web_pool"
-                    },
-                    "web_pool": {
-                        "class": "Pool",
-                        "monitors": [
-                            "http"
-                        ],
-                        "members": [
-                            {
-                                "servicePort": 80,
-                                "serverAddresses": []
-                            }
-                        ]
-                    }
-                }
-            }
+      "virtualServer": {
+        "frontend": {
+          "balance": "round-robin",
+          "mode": "http",
+          "partition": "k8s",
+          "virtualAddress": {
+            "bindAddr": "10.1.10.61",
+            "port": 80
+          }
+        },
+        "backend": {
+          "serviceName": "demo-app-svc",
+          "servicePort": 80,
+          "healthMonitors":[{
+            "interval": 5,
+            "protocol": "http",
+            "timeout": 16
+          }]
         }
+      }
     }
 EOF
+
+kubectl create -f cm-web.yaml
 ----
 
 [source, yaml]
-.*2. * 
+.*3. TMSH 查看创建的 VS* 
+----
+# cd /k8s/
+# list ltm virtual
+ltm virtual default_demo-app {
+    creation-time 2020-05-02:09:37:19
+    destination 10.1.10.61%0:http
+    ip-protocol tcp
+    last-modified-time 2020-05-02:09:37:19
+    mask 255.255.255.255
+    metadata {
+        user_agent {
+            value k8s-bigip-ctlr-1.14.0-n2285-661543171
+        }
+    }
+    partition k8s
+    pool cfgmap_default_demo-app_demo-app-svc
+    profiles {
+        /Common/http { }
+        /Common/tcp { }
+    }
+    source 0.0.0.0/0
+    source-address-translation {
+        type automap
+    }
+    translate-address enabled
+    translate-port enabled
+    vs-index 11
+}
 ----
 
+[source, yaml]
+.*4. Clean Up* 
+----
+kubectl delete -f cm-web.yaml
+kubectl delete all --all
 ----

@@ -1,24 +1,80 @@
 = 用例
 :toc: manual
 
-== BIG-IP Controller 下发 VS 和会话保持的配置到 VE
+== AS 3 下发 VS 和 Cookie 会话保持
 
 === 目的
 
-BIG-IP Controller 可以自动推送 VS 及会话保持的配置，添加应用及相关节点。
+验证 AS 3 下发 VS 和 Cookie 会话保持。
 
 === 步骤
 
 [source, bash]
-.**
+.*1. 创建 App*
 ----
+// deploymnets
+kubectl create deployment app --image='registry.example.com:5443/backend:0.0.2'
+kubectl scale deployments app --replicas=3 
 
+// service
+kubectl expose deployment app --port=80 --target-port=8080 --type=NodePort --name=app-svc
+kubectl label svc app-svc cis.f5.com/as3-tenant=default
+kubectl label svc app-svc cis.f5.com/as3-app=default_app
+kubectl label svc app-svc cis.f5.com/as3-pool=app_svc_pool
 ----
 
 [source, bash]
-.**
+.*2. ConfigMap*
 ----
-
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: app-as3
+  labels:
+    f5type: virtual-server
+    as3: "true"
+data:
+  template: |
+    {
+      "class": "AS3",
+      "action": "deploy",
+      "persist": true,
+      "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.11.0",
+        "id": "app_svc_test_001",
+        "label": "default",
+        "remark": "HTTP application",
+        "default": {
+          "class": "Tenant",
+          "default_app": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.60"
+              ],
+              "virtualPort": 80,
+              "pool": "app_svc_pool"
+            },
+            "app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "http"
+              ],
+              "members": [
+              {
+                "servicePort": 8080,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        }
+      }
+    }
 ----
 
 [source, bash]

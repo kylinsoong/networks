@@ -1,0 +1,27 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mysql
+  namespace: test001
+  labels:
+    f5type: virtual-server
+data:
+  schema: "f5schemadb://bigip-virtual-server_v0.1.7.json"
+  data: |-
+    {
+      "virtualServer": {
+        "frontend": {
+          "balance": "round-robin",
+          "mode": "tcp",
+          "partition": "k8s",
+          "virtualAddress": {
+            "bindAddr": "10.1.10.60",
+            "port": 3306
+          }
+        },
+        "backend": {
+          "serviceName": "mysql-svc",
+          "servicePort": 3306
+        }
+      }
+    }

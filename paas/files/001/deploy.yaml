@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: app
+  name: app
+  namespace: f5-test001
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: app
+    spec:
+      containers:
+      - image: kylinsoong/backend:0.0.4
+        name: backend
+        ports:
+        - containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app
+    cis.f5.com/as3-tenant: "f5_test001"
+    cis.f5.com/as3-app: "f5_test001"
+    cis.f5.com/as3-pool: "app_svc_pool"
+  name: app-svc
+  namespace: f5-test001
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: app
+  sessionAffinity: None
+  type: ClusterIP

@@ -29,33 +29,10 @@ kind: Service
 metadata:
   labels:
     app: app
-    cis.f5.com/as3-app: f5_test003_1
+    cis.f5.com/as3-app: Shared
     cis.f5.com/as3-pool: app_pool
     cis.f5.com/as3-tenant: f5_test003
-  name: app-svc-1
-  namespace: f5-test003
-spec:
-  ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 8080
-  selector:
-    app: app
-  sessionAffinity: None
-  type: ClusterIP
-
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: app
-    cis.f5.com/as3-app: f5_test003_2
-    cis.f5.com/as3-pool: app_pool
-    cis.f5.com/as3-tenant: f5_test003
-  name: app-svc-2
+  name: app-svc
   namespace: f5-test003
 spec:
   ports:

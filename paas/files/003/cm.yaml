@@ -20,17 +20,9 @@ data:
         "remark": "HTTP application",
         "f5_test003": {
           "class": "Tenant",
-          "f5_test003_1": {
+          "Shared": {
             "class": "Application",
-            "template": "generic",
-            "app_svc_1_vs": {
-              "class": "Service_HTTP",
-              "virtualAddresses": [
-                "10.1.10.61"
-              ],
-              "virtualPort": 80,
-              "pool": "app_pool"
-            },
+            "template": "shared",
             "app_pool": {
               "class": "Pool",
               "monitors": [
@@ -44,6 +36,18 @@ data:
               ]
             }
           },
+          "f5_test003_1": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_1_vs": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.61"
+              ],
+              "virtualPort": 80,
+              "pool": "/f5_test003/Shared/app_pool"
+            }
+          },
            "f5_test003_2": {
             "class": "Application",
             "template": "generic",
@@ -53,19 +57,7 @@ data:
                 "10.1.10.62"
               ],
               "virtualPort": 80,
-              "pool": "app_pool"
-            },
-            "app_pool": {
-              "class": "Pool",
-              "monitors": [
-                "tcp"
-              ],
-              "members": [
-              {
-                "servicePort": 80,
-                "serverAddresses": []
-              }
-              ]
+              "pool": "/f5_test003/Shared/app_pool"
             }
           }
         }

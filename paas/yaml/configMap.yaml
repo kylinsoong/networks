@@ -1,0 +1,455 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: f5-bigip-confgimap
+  namespace: f5-test001
+  labels:
+    f5type: virtual-server
+    as3: "true"
+data:
+  template: |
+    {
+      "class": "AS3",
+      "action": "deploy",
+      "persist": true,
+      "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.18.0",
+        "id": "f5-bigip-confgimap",
+        "label": "f5-bigip-confgimap",
+        "f5_test001": {
+          "class": "Tenant",
+          "f5_test001": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.60"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test001_app_svc_pool"
+            },
+            "f5_test001_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+
+        "f5_test002": {
+          "class": "Tenant",
+          "f5_test002_1": {
+            "class": "Application",
+            "template": "generic",
+            "app_1_svc_vs": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.61"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test002_app_1_svc_pool"
+            },
+            "f5_test002_app_1_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          },
+           "f5_test002_2": {
+            "class": "Application",
+            "template": "generic",
+            "app_2_svc_vs": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.62"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test002_app_2_svc_pool"
+            },
+            "f5_test002_app_2_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+
+        "f5_test003": {
+          "class": "Tenant",
+          "f5_test003_1": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_1_vs": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.64"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test003_app_pool"
+            },
+            "f5_test003_app_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          },
+           "f5_test003_2": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_2_vs": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.65"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test003_app_pool"
+            },
+            "f5_test003_app_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        
+        "f5_test004": {
+          "class": "Tenant",
+          "f5_test004": {
+            "class": "Application",
+            "template": "http",
+            "serviceMain": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.66"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test004_app_1_svc_pool"
+            },
+            "f5_test004_app_1_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            },
+            "app_2_svc_vs": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.67"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test004_app_2_svc_pool"
+            },
+            "f5_test004_app_2_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+
+        "f5_test005": {
+          "class": "Tenant",
+          "f5_test005": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+               "iRules": ["iRulesHere"],
+              "virtualAddresses": [
+                "10.1.10.68"
+              ],
+              "virtualPort": 80
+            },
+            "f5_test005_app_1_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            },
+             "f5_test005_app_2_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            },
+            "iRulesHere": {
+              "class": "iRule",
+              "remark": "switch between pools",
+              "iRule": "when HTTP_REQUEST {\n if { [HTTP::uri] contains \"foo\" } {\n pool f5_test005_app_1_svc_pool \n } elseif {[HTTP::uri] contains \"bar\"} {\n pool f5_test005_app_2_svc_pool \n } else { \n pool f5_test005_app_1_svc_pool \n }\n  \n}"
+            }
+          }
+        },
+
+        "f5_test006": {
+          "class": "Tenant",
+          "f5_test006": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "virtualAddresses": [
+                "10.1.10.69"
+              ],
+              "policyEndpoint": "forward_policy"
+            },
+            "f5_test006_app_1_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "http"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            },
+             "f5_test006_app_2_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "http"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            },            
+            "forward_policy": {
+              "class": "Endpoint_Policy",
+              "rules":[
+                {
+                  "name": "forward_to_poo1",
+                  "conditions": [
+                     {
+                       "type": "httpUri",
+                       "path": {
+                         "operand": "contains",
+                         "values": ["foo"]
+                       }
+                     }
+                   ],  
+                   "actions": [
+                     {
+                       "type": "forward",
+                       "event": "request",
+                       "select": {
+                         "pool": {
+                            "use": "f5_test006_app_1_svc_pool"
+                          }
+                       }
+                     }
+                   ]
+                },
+                {
+                  "name": "forward_to_poo2",
+                  "conditions": [
+                     {
+                       "type": "httpUri",
+                       "path": {
+                         "operand": "contains",
+                         "values": ["bar"]
+                       }
+                     }
+                   ],  
+                   "actions": [
+                     {
+                       "type": "forward",
+                       "event": "request",
+                       "select": {
+                         "pool": {
+                           "use": "f5_test006_app_2_svc_pool"
+                         }
+                       }
+                     }
+                   ]
+                }
+              ]
+            }
+          }
+        },
+
+        "f5_test007": {
+          "class": "Tenant",
+          "f5_test007": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_TCP",
+              "persistenceMethods": [ "source-address" ],
+              "virtualAddresses": [
+                "10.1.10.70"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test007_app_svc_pool"
+            },
+            "f5_test007_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+
+        "f5_test008": {
+          "class": "Tenant",
+          "f5_test008": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_TCP",
+              "persistenceMethods": [ "source-address" ],
+              "virtualAddresses": [
+                "10.1.10.71"
+              ],
+              "virtualPort": 80,
+              "mirroring": "L4",
+              "pool": "f5_test008_app_svc_pool"
+            },
+            "f5_test008_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+
+        "f5_test009": {
+          "class": "Tenant",
+          "f5_test009": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_TCP",
+              "persistenceMethods": [ "source-address" ],
+              "virtualAddresses": [
+                "10.1.10.72"
+              ],
+              "virtualPort": 80,
+              "pool": "f5_test009_app_svc_pool"
+            },
+            "f5_test009_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+
+        "f5_test010": {
+          "class": "Tenant",
+          "f5_test010": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.73"
+              ],
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "f5_test010_app_svc_pool"
+            },
+            "f5_test010_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp"
+              ],
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        }
+      }
+    }

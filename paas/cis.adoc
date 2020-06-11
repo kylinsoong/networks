@@ -5,7 +5,7 @@
 
 // TODO
 
-== 前序安装
+== F5 HW/VE 准备
 
 === F5 HW/VE 准备
 
@@ -35,84 +35,42 @@ $ curl -k -u admin:admin.F5demo.com https://192.168.1.8/mgmt/shared/appsvcs/info
 }
 ----
 
-=== 创建 Secret
+== 安装
 
-[source, json]
+下载 yaml 文件：
+
+* link:files/rbac.yaml[rbac.yaml]
+* link:files/cis.yaml[cis.yaml]
+
+[source, bash]
+.*安装*
 ----
-// create
 kubectl create secret generic bigip-login --from-literal=username=admin --from-literal=password=admin.F5demo.com -n kube-system
-
-// verify
-kubectl describe secret bigip-login -n kube-system
-----
-
-=== RBAC 安全认证
-
-[source, json]
-.*1. 创建 Service Account*
----- 
 kubectl create serviceaccount bigip-ctlr -n kube-system
-----
-
-NOTE: Service Account 确保 Pod 内的容器可以调运 Kubernetes API，具体创建 `bigip-ctlr` 会生成一个 `secret`，`secret` 内保存有证书，Pod 内的容器在调运 Kubernetes API 使用此证书。
-
-*2. 创建*
-
-[source, yaml]
-.*rbac-broadest.yaml*
-----
-cat <<EOF > ./rbac-broadest.yaml
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: bigip-ctlr-clusterrole
-rules:
-- apiGroups: ["", "extensions"]
-  resources: ["nodes", "services", "endpoints", "namespaces", "ingresses", "pods"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["", "extensions"]
-  resources: ["configmaps", "events", "ingresses/status"]
-  verbs: ["get", "list", "watch", "update", "create", "patch"]
-- apiGroups: ["", "extensions"]
-  resources: ["secrets"]
-  resourceNames: ["bigip-login"]
-  verbs: ["get", "list", "watch"]
-
----
-
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: bigip-ctlr-clusterrole-binding
-  namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: bigip-ctlr-clusterrole
-subjects:
-- apiGroup: ""
-  kind: ServiceAccount
-  name: bigip-ctlr
-  namespace: kube-system
-EOF
+kubectl create -f rbac.yaml
+kubectl create -f cis.yaml 
 ----
 
 [source, bash]
+.*安装验证* 
 ----
-kubectl create -f rbac-broadest.yaml
+kubectl logs -f k8s-bigip-ctlr-c4898b6b6-ccdng -n kube-system
+2020/06/08 14:17:44 [INFO] [INIT] Starting: Container Ingress Services - Version: 2.0.0, BuildInfo: cloud-user-efcab9e-20200522033624
+2020/06/08 14:17:44 [INFO] ConfigWriter started: 0xc00031e360
+2020/06/08 14:17:44 [INFO] Started config driver sub-process at pid: 15
+2020/06/08 14:17:44 [INFO] [INIT] Creating Agent for as3
+2020/06/08 14:17:44 [INFO] [AS3] Initializing AS3 Agent
+2020/06/08 14:17:44 [INFO] [CCCL] Initializing CCCL Agent
+2020/06/08 14:17:44 [INFO] [CORE] NodePoller (0xc000350120) registering new listener: 0x130d7c0
+2020/06/08 14:17:44 [INFO] [CORE] NodePoller started: (0xc000350120)
+2020/06/08 14:17:44 [INFO] [CORE] Watching Ingress resources.
+2020/06/08 14:17:44 [INFO] [CORE] Watching ConfigMap resources.
+2020/06/08 14:17:44 [INFO] [CORE] Handling ConfigMap resource events.
+2020/06/08 14:17:44 [INFO] [CORE] Handling Ingress resource events.
+2020/06/08 14:17:44 [INFO] [CORE] Registered BigIP Metrics
+2020/06/08 14:17:44 [INFO] [CCCL] Successfully Sent the FDB Records
+2020/06/08 14:17:45 [INFO] [2020-06-08 14:17:45,561 __main__ INFO] entering inotify loop to watch /tmp/k8s-bigip-ctlr.config240116962/config.json
 ----
-
-*相关 YAML 下载*
-
-|===
-|名称 |描述
-
-|link:files/rbac-broadest.yaml[rbac-broadest.yaml]
-|最大权限设定
-
-|===
-
-== 部署
 
 === flannel VXLAN 集成
 
@@ -213,80 +171,6 @@ EOF
 // create
 kubectl create -f big-ip-node.yaml 
 ----
-
-=== Deployment 部署
-
-[source, bash]
-.*1. 准备 YAML 文件*
-----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: k8s-bigip-ctlr
-  namespace: kube-system
-  labels:
-    app: k8s-bigip-ctlr
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: k8s-bigip-ctlr
-  template:
-    metadata:
-      name: k8s-bigip-ctlr
-      labels:
-        app: k8s-bigip-ctlr
-    spec:
-      serviceAccountName: bigip-ctlr
-      containers:
-        - name: k8s-bigip-ctlr
-          image: "f5networks/k8s-bigip-ctlr"
-          env:
-            - name: BIGIP_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: bigip-login
-                  key: username
-            - name: BIGIP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: bigip-login
-                  key: password
-          command: ["/app/bin/k8s-bigip-ctlr"]
-          args: [
-            "--bigip-username=$(BIGIP_USERNAME)",
-            "--bigip-password=$(BIGIP_PASSWORD)",
-            "--bigip-url=192.168.1.8",
-            "--insecure=true",
-            "--bigip-partition=k8s",
-            "--pool-member-type=cluster"
-            ]
-----
-
-NOTE: Add `--flannel-name=/Common/flannel_vxlan` if use flannel network plugin.
-
-[source, bash]
-.*2. 部署*
-----
-kubectl create -f deployments.yaml 
-----
-
-[source, bash]
-.*3. 验证*
-----
-$ kubectl get pods -n bigip-ctlr --no-headers -o wide
-k8s-bigip-ctlr-7b869df6b6-fnqwt   1/1   Running   0     90s   192.168.251.33   machine02.example.com
-----
-
-*4. 相关 YAML 下载*
-
-|===
-|名称 |描述
-
-|link:files/deployments-basic.yaml[deployments-basic.yaml]
-|最小部署
-
-|===
 
 == IAPP 方式对接
 
@@ -507,7 +391,7 @@ The `k8s-bigip-ctlr` container throws the following error:
 2020/05/18 08:12:59 [ERROR] [AS3] REST call error: Post https://10.1.1.245/mgmt/shared/appsvcs/declare/: dial tcp 10.1.1.245:443: connect: no route to host 
 ----
 
-*Solutions*
+*Root Cause & Solutions*
 
 The firewall on K8S node reject container request. Either set firewall rule, or stop firewall can solve this problem.
 
@@ -526,6 +410,21 @@ E0504 11:16:16.422460    1 reflector.go:126] github.com/F5Networks/k8s-bigip-ctl
 E0504 11:16:16.428132    1 reflector.go:126] github.com/F5Networks/k8s-bigip-ctlr/pkg/appmanager/appManager.go:794: Failed to list *v1.ConfigMap: Get https://10.96.0.1:443/api/v1/configmaps?labelSelector=as3+in+%28true%29%2Cf5type+in+%28virtual-server%29&limit=500&resourceVersion=0: dial tcp 10.96.0.1:443: i/o timeout
 ----
 
-*Solutions*
+*Root Cause & Solutions*
 
-The AS3 can not request to CIS Container, the lack of route or network connevtive cause this issue, correct the network connection can solve this issue.
+The AS3 can not request to CIS Container, the following may cause this:
+
+* Network connectivity, BIG-IP VE can not access the k8s pod, correct the network connectivity can solve this issue.
+* K8S is Hang or out of service, wait the K8S back to service, like increase the resource provisioning.
+
+=== Error validating AS3 template
+
+[source, bash]
+----
+2020/06/04 02:28:19 [ERROR] [AS3] Error validating AS3 template
+2020/06/04 02:28:19 [ERROR] [AS3] Error while processing user defined AS3 cfgMap Name: app-as3
+----
+
+*Root Cause & Solutions*
+
+

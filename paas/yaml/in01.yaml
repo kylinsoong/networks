@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-01
+  namespace: f5-test-001
+  annotations:
+    virtual-server.f5.com/ip: "10.1.10.60"
+    virtual-server.f5.com/partition: "k8s"
+spec:
+  rules:
+  - host: bar.apps.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: app-1-svc
+          servicePort: 80

@@ -72,7 +72,7 @@ kubectl logs -f k8s-bigip-ctlr-c4898b6b6-ccdng -n kube-system
 2020/06/08 14:17:45 [INFO] [2020-06-08 14:17:45,561 __main__ INFO] entering inotify loop to watch /tmp/k8s-bigip-ctlr.config240116962/config.json
 ----
 
-=== flannel VXLAN 集成
+== flannel VXLAN 集成
 
 如果 Kubernets 使用 flannel 网络插件，则需要配置本部分。
 
@@ -172,7 +172,7 @@ EOF
 kubectl create -f big-ip-node.yaml 
 ----
 
-== IAPP 方式对接
+== CIS + CCCL
 
 === L4 Mysql 服务
 
@@ -301,11 +301,7 @@ kubectl apply -f cm-blank.yaml
 kubectl delete ns f5-test004
 ----
 
-
-
-*YAML 脚本*
-
-*
+== CIS + IAPP
 
 [source, bash]
 .*步骤*
@@ -313,15 +309,46 @@ kubectl delete ns f5-test004
 
 ----
 
-*YAML 脚本*
 
-*
+== Ingress
+
+=== 多模式配合下发
+
+如下图，K8S 中有 5 个 Service，前两个 Service 通过 Ingress 1 发布，第三个 Service 通过 Ingress 2 发布，最后两个 Service 通过 AS 3 负载均衡发布。
+
+image:img/cis-ingress-as3.png[]
+
+.*YAML 文件描述*
+|===
+|YAML |DESC
+
+|link:yaml/001/cis.yaml[cis.yaml]
+|CIS Controller 部署
+
+|link:yaml/001/deploy.yaml[deploy.yaml]
+|部署 5 个 App 及 5 个 Service
+
+|link:yaml/001/in01.yaml[in01.yaml]
+|部署 Ingress 1
+
+|link:yaml/001/in02.yaml[in02.yaml]
+|部署 Ingress 2
+
+|link:yaml/001/cm.yaml[cm.yaml]
+|AS 3 下发模板
+
+|===
 
 [source, bash]
 .*步骤*
 ----
-
+kubectl create -f deploy.yaml
+kubectl create -f in01.yaml
+kubectl create -f in02.yaml
+kubectl create -f cm.yaml
 ----
+
+=== TD
 
 *YAML 脚本*
 

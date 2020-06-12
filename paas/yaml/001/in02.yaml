@@ -8,10 +8,10 @@ metadata:
     virtual-server.f5.com/partition: "k8s"
 spec:
   rules:
-  - host: foo.apps.example.com
+  - host: app.zoo.example.com
     http:
       paths:
       - path: /
         backend:
-          serviceName: app-2-svc
+          serviceName: app-3-svc
           servicePort: 80

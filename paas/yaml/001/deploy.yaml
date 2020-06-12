@@ -1,0 +1,242 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: app-1
+  name: app-1
+  namespace: f5-test-001
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: app-1
+    spec:
+      containers:
+      - image: kylinsoong/backend:0.0.4
+        name: backend
+        ports:
+        - containerPort: 8080
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: app-2
+  name: app-2
+  namespace: f5-test-001
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-2
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: app-2
+    spec:
+      containers:
+      - image: kylinsoong/backend:0.0.4
+        name: backend
+        ports:
+        - containerPort: 8080
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: app-3
+  name: app-3
+  namespace: f5-test-001
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-3
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: app-3
+    spec:
+      containers:
+      - image: kylinsoong/backend:0.0.4
+        name: backend
+        ports:
+        - containerPort: 8080
+
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: app-4
+  name: app-4
+  namespace: f5-test-001
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-4
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: app-4
+    spec:
+      containers:
+      - image: kylinsoong/backend:0.0.4
+        name: backend
+        ports:
+        - containerPort: 8080
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: app-5
+  name: app-5
+  namespace: f5-test-001
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-5
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: app-5
+    spec:
+      containers:
+      - image: kylinsoong/backend:0.0.4
+        name: backend
+        ports:
+        - containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-1
+  name: app-1-svc
+  namespace: f5-test-001
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: app-1
+  sessionAffinity: None
+  type: ClusterIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-2
+  name: app-2-svc
+  namespace: f5-test-001
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: app-2
+  sessionAffinity: None
+  type: ClusterIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-3
+  name: app-3-svc
+  namespace: f5-test-001
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: app-3
+  sessionAffinity: None
+  type: ClusterIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-4
+    cis.f5.com/as3-app: f5_test_001_4
+    cis.f5.com/as3-pool: f5_test_001_app_4_svc_pool
+    cis.f5.com/as3-tenant: f5_test_001
+  name: app-4-svc
+  namespace: f5-test-001
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: app-4
+  sessionAffinity: None
+  type: ClusterIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-5
+    cis.f5.com/as3-app: f5_test_001_5
+    cis.f5.com/as3-pool: f5_test_001_app_5_svc_pool
+    cis.f5.com/as3-tenant: f5_test_001
+  name: app-5-svc
+  namespace: f5-test-001
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: app-5
+  sessionAffinity: None
+  type: ClusterIP

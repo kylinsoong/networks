@@ -30,4 +30,5 @@
 . link:paas/README.adoc[PaaS]
 .. link:paas/cis.adoc[CIS]
 . link:sec/README.adoc[安全]
+. link:tech/README.adoc[技术]
 

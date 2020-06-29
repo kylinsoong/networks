@@ -1,0 +1,921 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cis-perf-test
+  labels:
+    f5type: virtual-server
+    as3: "true"
+data:
+  template: |
+    {
+      "class": "AS3",
+      "action": "deploy",
+      "persist": true,
+      "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.18.0",
+        "id": "cis-perf-test",
+        "label": "cis_perf_test",
+        "remark": "HTTP application",
+        "cistest100": {
+          "class": "Tenant",
+          "cistest100": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.60"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest100_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest100_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest101": {
+          "class": "Tenant",
+          "cistest101": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.61"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest101_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest101_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest102": {
+          "class": "Tenant",
+          "cistest102": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.62"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest102_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest102_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest103": {
+          "class": "Tenant",
+          "cistest103": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.63"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest103_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest103_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest104": {
+          "class": "Tenant",
+          "cistest104": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.64"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest104_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest104_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest105": {
+          "class": "Tenant",
+          "cistest105": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.65"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest105_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest105_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest106": {
+          "class": "Tenant",
+          "cistest106": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.66"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest106_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest106_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest107": {
+          "class": "Tenant",
+          "cistest107": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.67"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest107_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest107_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest108": {
+          "class": "Tenant",
+          "cistest108": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.68"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest108_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest108_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest109": {
+          "class": "Tenant",
+          "cistest109": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.69"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest109_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest109_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest110": {
+          "class": "Tenant",
+          "cistest110": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.70"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest110_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest110_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest111": {
+          "class": "Tenant",
+          "cistest111": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.71"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest111_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest111_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest112": {
+          "class": "Tenant",
+          "cistest112": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.72"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest112_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest112_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest113": {
+          "class": "Tenant",
+          "cistest113": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.73"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest113_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest113_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest114": {
+          "class": "Tenant",
+          "cistest114": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.74"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest114_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest114_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest115": {
+          "class": "Tenant",
+          "cistest115": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.75"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest115_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest115_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest116": {
+          "class": "Tenant",
+          "cistest116": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.76"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest116_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest116_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest117": {
+          "class": "Tenant",
+          "cistest117": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.77"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest117_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest117_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest118": {
+          "class": "Tenant",
+          "cistest118": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.78"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest118_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest118_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "cistest119": {
+          "class": "Tenant",
+          "cistest119": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.79"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "cistest119_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "cistest119_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        }
+      }
+    }

@@ -3,6 +3,8 @@
 
 == 快速初始化命令
 
+=== 双臂接入快速初始化
+
 [source, bash]
 ----
 tmsh create net vlan external interfaces add { 1.1 { untagged } }
@@ -14,7 +16,18 @@ tmsh modify sys dns name-servers add { 10.1.10.2 }
 tmsh modify sys ntp timezone Asia/Shanghai
 tmsh modify sys db ui.system.preferences.recordsperscreen value 110
 tmsh save sys config
-exit
+----
+
+=== 单臂接入快速初始化
+
+[source, bash]
+----
+tmsh show net interface
+tmsh create net vlan external interfaces add { 1.1 { untagged } }
+tmsh create net self 192.168.25.12 address 192.168.25.12/24 vlan external allow-service default
+tmsh create net route Default_Gateway network 0.0.0.0/0 gw 192.168.25.254
+tmsh modify sys ntp timezone Asia/Shanghai
+tmsh save sys config
 ----
 
 == 基本管理命令

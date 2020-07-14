@@ -27,12 +27,13 @@ public class CISPerfMain implements CommandLineRunner {
 		String backend = "kylinsoong/backend:0.0.4";
 		String net = "10.1.10.0/24";
 		int ip_start = 3;
+		boolean isSingleNamsespace = false;
 		
 		if(args.length < 2) {
 			StringBuffer sb = new StringBuffer();
 			sb.append("Invalid parameters").append("\n");
-			sb.append("Run with: --count <COUNT> --deploy <DEPLOYMENT NAME> --configmap <CONFIGMAP NAME> --backend <IMAGE NAME> --net <VS ADDR> --ipstart <IP START>").append("\n");
-			sb.append("      eg: --count 20 --deploy deploy.yaml --configmap configmap.yaml --backend 'kylinsoong/backend:0.0.4' --net '10.1.10.0/24' --ipstart 3");
+			sb.append("Run with: --count <COUNT> --deploy <DEPLOYMENT NAME> --configmap <CONFIGMAP NAME> --backend <IMAGE NAME> --net <VS ADDR> --ipstart <IP START> --single <true/false>").append("\n");
+			sb.append("      eg: --count 20 --deploy deploy.yaml --configmap configmap.yaml --backend 'kylinsoong/backend:0.0.4' --net '10.1.10.0/24' --ipstart 3 --single false");
 			throw new RuntimeException(sb.toString());
 		}
 		
@@ -50,10 +51,11 @@ public class CISPerfMain implements CommandLineRunner {
 				net = args[++i];
 			} else if(args[i].equals("--ipstart")) {
 				ip_start = Integer.parseInt(args[++i]);
+			} else if(args[i].equals("--single")) {
+				isSingleNamsespace = Boolean.parseBoolean(args[++i]);
 			}
 
 		}
-		
 		
 		
 		if(!net.endsWith(".0/24")) {
@@ -61,62 +63,137 @@ public class CISPerfMain implements CommandLineRunner {
 		}
 		
 		String net_prefix = net.substring(0, net.length() - 5);
-				
-		int start = 100;
-		boolean first = true;
-		boolean firstCM = true;
 		
-		String cmStart = getResourceFileAsString("cm.start");
-		StringBuffer sb = new StringBuffer();
-		sb.append(cmStart);
-				
 		System.out.println("Generating K8S deployments to " + deploy);
-		for (int i = 0 ; i < count ; i ++) {
+		
+		if(isSingleNamsespace) {
 			
-			String raw = getResourceFileAsString("deploy.yaml");
-			String ns = "cistest" + String.valueOf(start + i);
-						
-			raw = raw.replaceAll("REPLACEMENT_NAMESPACE", ns);
-			raw = raw.replaceAll("REPLACEMENT_BACKEND_IMAGE", backend);
+			String ns = "cistest100";
+			boolean first = true;
+			boolean firstCM = true;
 			
-			if(first) {
-				first = false;
-				if (Files.exists(Paths.get(deploy))) {
-					Files.delete(Paths.get(deploy));
-				}
-				Files.createFile(Paths.get(deploy));
+			String cmStart = getResourceFileAsString("cmsingle.start");
+			cmStart = cmStart.replaceAll("REPLACEMENT_NAMESPACE", ns);
+			StringBuffer sb = new StringBuffer();
+			sb.append(cmStart);
+			
+			for (int i = 0 ; i < count ; i ++) {
 				
-				if (Files.exists(Paths.get(configmap))) {
-					Files.delete(Paths.get(configmap));
+				String raw = getResourceFileAsString("deploysingle.yaml");
+				raw = raw.replaceAll("REPLACEMENT_NAMESPACE", ns);
+				raw = raw.replaceAll("REPLACEMENT_BACKEND_IMAGE", backend);
+				String app = "app-" +  String.valueOf(1 + i);
+				String svc = "app-svc-" +  String.valueOf(1 + i);
+				raw = raw.replaceAll("REPLACEMENT_APP_NAME", app);
+				raw = raw.replaceAll("REPLACEMENT_SVC_NAME", svc);
+				
+				if(first) {
+					first = false;
+					if (Files.exists(Paths.get(deploy))) {
+						Files.delete(Paths.get(deploy));  
+					}
+					Files.createFile(Paths.get(deploy));
+					
+					if (Files.exists(Paths.get(configmap))) {
+						Files.delete(Paths.get(configmap));
+					}
+					Files.createFile(Paths.get(configmap));
+				} else {
+					Files.write(Paths.get(deploy), "---\n".getBytes(), StandardOpenOption.APPEND);
 				}
-				Files.createFile(Paths.get(configmap));
-			} else {
-				Files.write(Paths.get(deploy), "---\n".getBytes(), StandardOpenOption.APPEND);
+				
+				Files.write(Paths.get(deploy), raw.getBytes(), StandardOpenOption.APPEND);
+				Files.write(Paths.get(deploy), "\n".getBytes(), StandardOpenOption.APPEND);
+				
+				//configmap
+				String cm = getResourceFileAsString("cmsingle.content");
+				cm = cm.replaceAll("REPLACEMENT_NAMESPACE", ns);
+				cm = cm.replaceAll("REPLACEMENT_SVC_NAME", svc);
+				String vip = net_prefix + "." + (i + ip_start);
+				cm = cm.replaceAll("REPLACEMENT_BIGIP_VS_IP_ADDR", vip);
+		
+				if(firstCM) {
+					firstCM = false;
+					sb.append("\n").append(cm);
+				} else {
+					sb.append(",").append("\n").append(cm);
+				}
+				
 			}
 			
-			Files.write(Paths.get(deploy), raw.getBytes(), StandardOpenOption.APPEND);
-			Files.write(Paths.get(deploy), "\n".getBytes(), StandardOpenOption.APPEND);
+			System.out.println("Generating AS3 configmap to " + configmap);
 			
-			// configmap
+			String cmEnd = getResourceFileAsString("cmsingle.end");
+			sb.append("\n").append(cmEnd);
+			Files.write(Paths.get(configmap), sb.toString().getBytes());
 			
-			String cm = getResourceFileAsString("cm.content");
-			cm = cm.replaceAll("REPLACEMENT_NAMESPACE", ns);
-			String vip = net_prefix + "." + (i + ip_start);
-			cm = cm.replaceAll("REPLACEMENT_BIGIP_VS_IP_ADDR", vip);
-			if(firstCM) {
-				firstCM = false;
-				sb.append("\n").append(cm);
-			} else {
-				sb.append(",").append("\n").append(cm);
+		} else {
+			int start = 100;
+			boolean first = true;
+			boolean firstCM = true;
+			
+			String cmStart = getResourceFileAsString("cm.start");
+			StringBuffer sb = new StringBuffer();
+			sb.append(cmStart);
+					
+			for (int i = 0 ; i < count ; i ++) {
+				
+				String raw = getResourceFileAsString("deploy.yaml");
+				String ns = "cistest" + String.valueOf(start + i);
+							
+				raw = raw.replaceAll("REPLACEMENT_NAMESPACE", ns);
+				raw = raw.replaceAll("REPLACEMENT_BACKEND_IMAGE", backend);
+				
+				if(i % 3 == 0) {
+					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_1");
+				} else if(i % 3 == 1) {
+					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_2");
+				} if(i % 3 == 2) {
+					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_3");
+				}
+				
+				if(first) {
+					first = false;
+					if (Files.exists(Paths.get(deploy))) {
+						Files.delete(Paths.get(deploy));  
+					}
+					Files.createFile(Paths.get(deploy));
+					
+					if (Files.exists(Paths.get(configmap))) {
+						Files.delete(Paths.get(configmap));
+					}
+					Files.createFile(Paths.get(configmap));
+				} else {
+					Files.write(Paths.get(deploy), "---\n".getBytes(), StandardOpenOption.APPEND);
+				}
+				
+				Files.write(Paths.get(deploy), raw.getBytes(), StandardOpenOption.APPEND);
+				Files.write(Paths.get(deploy), "\n".getBytes(), StandardOpenOption.APPEND);
+				
+				// configmap
+				
+				String cm = getResourceFileAsString("cm.content");
+				cm = cm.replaceAll("REPLACEMENT_NAMESPACE", ns);
+				String vip = net_prefix + "." + (i + ip_start);
+				cm = cm.replaceAll("REPLACEMENT_BIGIP_VS_IP_ADDR", vip);
+		
+				if(firstCM) {
+					firstCM = false;
+					sb.append("\n").append(cm);
+				} else {
+					sb.append(",").append("\n").append(cm);
+				}
+				
 			}
 			
+			System.out.println("Generating AS3 configmap to " + configmap);
+			
+			String cmEnd = getResourceFileAsString("cm.end");
+			sb.append("\n").append(cmEnd);
+			Files.write(Paths.get(configmap), sb.toString().getBytes());
 		}
+				
 		
-		System.out.println("Generating AS3 configmap to " + configmap);
-		
-		String cmEnd = getResourceFileAsString("cm.end");
-		sb.append("\n").append(cmEnd);
-		Files.write(Paths.get(configmap), sb.toString().getBytes());
 		
 		
 		
@@ -134,20 +211,7 @@ public class CISPerfMain implements CommandLineRunner {
 		return content;
 	}
 	
-	void tmp(String... args) {
-		
-		if(args.length != 2) {
-			System.out.println("Run with paramters: java -jar http-client.jar <IP> <Port> <Times>");
-			System.out.println("                    <IP> - Server IP address");
-			System.out.println("                    <Port> - Service Port, like 80, 443, 8080, 8443, etc");
-			System.exit(0);
-		}
-		
-		String ip = args[0];
-		int port = Integer.parseInt(args[1]);
-		
-		System.out.println("Send 3 http request without GET");
-	}
+	
 
 	
 }

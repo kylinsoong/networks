@@ -24,7 +24,8 @@ public class CISPerfMain implements CommandLineRunner {
 		int count = 3;
 		String deploy = "deploy.yaml";
 		String configmap = "configmap.yaml";
-		String backend = "kylinsoong/backend:0.0.4";
+		String ingress = "ingress.yaml";
+		String backend = "cloudadc/cafe:1.0";
 		String net = "10.1.10.0/24";
 		int ip_start = 3;
 		boolean isSingleNamsespace = false;
@@ -33,7 +34,7 @@ public class CISPerfMain implements CommandLineRunner {
 			StringBuffer sb = new StringBuffer();
 			sb.append("Invalid parameters").append("\n");
 			sb.append("Run with: --count <COUNT> --deploy <DEPLOYMENT NAME> --configmap <CONFIGMAP NAME> --backend <IMAGE NAME> --net <VS ADDR> --ipstart <IP START> --single <true/false>").append("\n");
-			sb.append("      eg: --count 20 --deploy deploy.yaml --configmap configmap.yaml --backend 'kylinsoong/backend:0.0.4' --net '10.1.10.0/24' --ipstart 3 --single false");
+			sb.append("      eg: --count 20 --deploy deploy.yaml --configmap configmap.yaml --ingress ingress.yaml --backend 'cloudadc/cafe:1.0' --net '10.1.10.0/24' --ipstart 3 --single false");
 			throw new RuntimeException(sb.toString());
 		}
 		
@@ -51,6 +52,8 @@ public class CISPerfMain implements CommandLineRunner {
 				net = args[++i];
 			} else if(args[i].equals("--ipstart")) {
 				ip_start = Integer.parseInt(args[++i]);
+			} else if(args[i].equals("--ingress")) {
+				ingress = args[++i];
 			} else if(args[i].equals("--single")) {
 				isSingleNamsespace = Boolean.parseBoolean(args[++i]);
 			}
@@ -139,10 +142,13 @@ public class CISPerfMain implements CommandLineRunner {
 			for (int i = 0 ; i < count ; i ++) {
 				
 				String raw = getResourceFileAsString("deploy.yaml");
-				String ns = "cistest" + String.valueOf(start + i);
+				String ingressraw = getResourceFileAsString("ingress.yaml");
+				String ns = "perftest" + String.valueOf(start + i);
 							
 				raw = raw.replaceAll("REPLACEMENT_NAMESPACE", ns);
 				raw = raw.replaceAll("REPLACEMENT_BACKEND_IMAGE", backend);
+				
+				ingressraw  = ingressraw.replaceAll("REPLACEMENT_NAMESPACE", ns);
 				
 				if(i % 3 == 0) {
 					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_1");
@@ -163,12 +169,23 @@ public class CISPerfMain implements CommandLineRunner {
 						Files.delete(Paths.get(configmap));
 					}
 					Files.createFile(Paths.get(configmap));
+					
+					if (Files.exists(Paths.get(ingress))) {
+						Files.delete(Paths.get(ingress));
+					}
+					Files.createFile(Paths.get(ingress));
 				} else {
 					Files.write(Paths.get(deploy), "---\n".getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(ingress), "---\n".getBytes(), StandardOpenOption.APPEND);
 				}
 				
 				Files.write(Paths.get(deploy), raw.getBytes(), StandardOpenOption.APPEND);
 				Files.write(Paths.get(deploy), "\n".getBytes(), StandardOpenOption.APPEND);
+				
+				// ingress
+				Files.write(Paths.get(ingress), ingressraw.getBytes(), StandardOpenOption.APPEND);
+				Files.write(Paths.get(ingress), "\n".getBytes(), StandardOpenOption.APPEND);
+				
 				
 				// configmap
 				
@@ -184,8 +201,11 @@ public class CISPerfMain implements CommandLineRunner {
 					sb.append(",").append("\n").append(cm);
 				}
 				
+				
+				
 			}
 			
+			System.out.println("Generating ingress to " + ingress);
 			System.out.println("Generating AS3 configmap to " + configmap);
 			
 			String cmEnd = getResourceFileAsString("cm.end");

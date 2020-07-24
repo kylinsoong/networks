@@ -17,16 +17,16 @@ data:
         "id": "cis-perf-test",
         "label": "cis_perf_test",
         "remark": "HTTP application",
-        "cistest100": {
+        "perftest100": {
           "class": "Tenant",
-          "cistest100": {
+          "perftest100": {
             "class": "Application",
             "template": "generic",
             "app_svc_vs": {
               "class": "Service_HTTP",
               "persistenceMethods": [ "cookie" ],
               "virtualAddresses": [
-                "192.168.6.40"
+                "10.1.10.3"
               ],
               "profileHTTP": {
                 "use": "customHTTPProfile"
@@ -36,7 +36,7 @@ data:
               },
               "snat": "self",
               "virtualPort": 80,
-              "pool": "cistest100_app_svc_pool"
+              "pool": "perftest100_app_svc_pool"
             },
             "customHTTPProfile": {
               "class": "HTTP_Profile",
@@ -46,7 +46,7 @@ data:
               "class": "Multiplex_Profile",
               "sourceMask": "255.255.255.255"
             },
-            "cistest100_app_svc_pool": {
+            "perftest100_app_svc_pool": {
               "class": "Pool",
               "monitors": [
                 "tcp",
@@ -62,16 +62,16 @@ data:
             }
           }
         },
-        "cistest101": {
+        "perftest101": {
           "class": "Tenant",
-          "cistest101": {
+          "perftest101": {
             "class": "Application",
             "template": "generic",
             "app_svc_vs": {
               "class": "Service_HTTP",
               "persistenceMethods": [ "cookie" ],
               "virtualAddresses": [
-                "192.168.6.41"
+                "10.1.10.4"
               ],
               "profileHTTP": {
                 "use": "customHTTPProfile"
@@ -81,7 +81,7 @@ data:
               },
               "snat": "self",
               "virtualPort": 80,
-              "pool": "cistest101_app_svc_pool"
+              "pool": "perftest101_app_svc_pool"
             },
             "customHTTPProfile": {
               "class": "HTTP_Profile",
@@ -91,7 +91,7 @@ data:
               "class": "Multiplex_Profile",
               "sourceMask": "255.255.255.255"
             },
-            "cistest101_app_svc_pool": {
+            "perftest101_app_svc_pool": {
               "class": "Pool",
               "monitors": [
                 "tcp",
@@ -107,16 +107,16 @@ data:
             }
           }
         },
-        "cistest102": {
+        "perftest102": {
           "class": "Tenant",
-          "cistest102": {
+          "perftest102": {
             "class": "Application",
             "template": "generic",
             "app_svc_vs": {
               "class": "Service_HTTP",
               "persistenceMethods": [ "cookie" ],
               "virtualAddresses": [
-                "192.168.6.42"
+                "10.1.10.5"
               ],
               "profileHTTP": {
                 "use": "customHTTPProfile"
@@ -126,7 +126,7 @@ data:
               },
               "snat": "self",
               "virtualPort": 80,
-              "pool": "cistest102_app_svc_pool"
+              "pool": "perftest102_app_svc_pool"
             },
             "customHTTPProfile": {
               "class": "HTTP_Profile",
@@ -136,7 +136,7 @@ data:
               "class": "Multiplex_Profile",
               "sourceMask": "255.255.255.255"
             },
-            "cistest102_app_svc_pool": {
+            "perftest102_app_svc_pool": {
               "class": "Pool",
               "monitors": [
                 "tcp",
@@ -152,16 +152,16 @@ data:
             }
           }
         },
-        "cistest103": {
+        "perftest103": {
           "class": "Tenant",
-          "cistest103": {
+          "perftest103": {
             "class": "Application",
             "template": "generic",
             "app_svc_vs": {
               "class": "Service_HTTP",
               "persistenceMethods": [ "cookie" ],
               "virtualAddresses": [
-                "192.168.6.43"
+                "10.1.10.6"
               ],
               "profileHTTP": {
                 "use": "customHTTPProfile"
@@ -171,7 +171,7 @@ data:
               },
               "snat": "self",
               "virtualPort": 80,
-              "pool": "cistest103_app_svc_pool"
+              "pool": "perftest103_app_svc_pool"
             },
             "customHTTPProfile": {
               "class": "HTTP_Profile",
@@ -181,7 +181,52 @@ data:
               "class": "Multiplex_Profile",
               "sourceMask": "255.255.255.255"
             },
-            "cistest103_app_svc_pool": {
+            "perftest103_app_svc_pool": {
+              "class": "Pool",
+              "monitors": [
+                "tcp",
+                "http"
+              ],
+              "loadBalancingMode": "least-connections-member",
+              "members": [
+              {
+                "servicePort": 80,
+                "serverAddresses": []
+              }
+              ]
+            }
+          }
+        },
+        "perftest104": {
+          "class": "Tenant",
+          "perftest104": {
+            "class": "Application",
+            "template": "generic",
+            "app_svc_vs": {
+              "class": "Service_HTTP",
+              "persistenceMethods": [ "cookie" ],
+              "virtualAddresses": [
+                "10.1.10.7"
+              ],
+              "profileHTTP": {
+                "use": "customHTTPProfile"
+              },
+              "profileMultiplex": {
+                "use": "custoOneConnectProfile"
+              },
+              "snat": "self",
+              "virtualPort": 80,
+              "pool": "perftest104_app_svc_pool"
+            },
+            "customHTTPProfile": {
+              "class": "HTTP_Profile",
+              "xForwardedFor": true
+            },
+            "custoOneConnectProfile": {
+              "class": "Multiplex_Profile",
+              "sourceMask": "255.255.255.255"
+            },
+            "perftest104_app_svc_pool": {
               "class": "Pool",
               "monitors": [
                 "tcp",

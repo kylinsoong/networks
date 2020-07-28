@@ -258,54 +258,7 @@ delete ltm profile fastl4 custom_fastl4_loose
 
 === OneConnect
 
-* 全代理架构下，实现连接聚合降低服务器的连接总数，将服务器端的连接重复使用，以达到增加服务器出了能力的作用，可以增加 30% 的服务器处理能力
-* 需要对每一个请求都进行单独处理（注意在多数情况下，LTM只对一个连接的第一个包进行处理）
-* 典型的，打开Cookie会话保持有时候会出现保持不正确的情况，这时就需要打开One Connect
-* 通过设置Mask=255.255.255.255，可以使后台服务器可以“看到”客户端源IP，但这个时候One-connect只对一个客户端的连接起作用
-
-NOTE: One Connect Profile不是必须和HTTP Profile共用，也可以用于其他应用协议。用于其他应用协议的时候必须使用 iRules 编程来调用 One Connect。在需要对长连接进行拆分处理的时候，也需要用One Connect Profile。
-
-[source, bash]
-.*示例*
-----
-// 1. set up vs and pool
-create ltm pool http_pool members add { 10.1.20.11:8081 { address 10.1.20.11 } 10.1.20.12:8081 { address 10.1.20.12 } 10.1.20.13:8081 { address 10.1.20.13 } }
-create ltm virtual http_vs destination 10.1.10.20:80 ip-protocol tcp pool http_pool
-
-// 2. create OneConnect profie and reference to VS
-create ltm profile one-connect custom_one_connect defaults-from oneconnect max-size 200 max-age 60 idle-timeout-override 30 source-mask 255.255.255.0 limit-type idle
-modify ltm virtual http_vs profiles add { custom_one_connect { } }
-
-// 3. test, send 100 times http request
-for i in {1..100} ; do curl http://10.1.10.20/hello; sleep 0.1; done
-
-// 4. check the connection pool 
-# show sys connection cs-server-addr 10.1.10.20
-Sys::Connections
-10.1.10.1:60789  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 1)  none  none
-10.1.10.1:60797  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
-10.1.10.1:60794  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
-10.1.10.1:60793  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 1)  none  none
-10.1.10.1:60801  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
-10.1.10.1:60802  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 1)  none  none
-10.1.10.1:60798  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 1)  none  none
-10.1.10.1:60790  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 1)  none  none
-10.1.10.1:60799  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
-10.1.10.1:60787  10.1.10.20:80  any6.any  any6.any  tcp  2  (tmm: 0)  none  none
-10.1.10.1:60803  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
-10.1.10.1:60791  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
-10.1.10.1:60796  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
-10.1.10.1:60788  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
-10.1.10.1:60792  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
-10.1.10.1:60795  10.1.10.20:80  any6.any  any6.any  tcp  1  (tmm: 0)  none  none
-10.1.10.1:60800  10.1.10.20:80  any6.any  any6.any  tcp  0  (tmm: 0)  none  none
-Total records returned: 17
-
-// 5. clean up
-delete ltm virtual http_vs
-delete ltm pool http_pool
-delete ltm profile one-connect custom_one_connect 
-----
+link:oneconnect.adoc[点击查看]
 
 === HTTP Compression
 

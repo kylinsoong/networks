@@ -9,29 +9,14 @@
               "virtualAddresses": [
                 "REPLACEMENT_BIGIP_VS_IP_ADDR"
               ],
-              "profileHTTP": {
-                "use": "customHTTPProfile"
-              },
-              "profileMultiplex": {
-                "use": "custoOneConnectProfile"
-              },
               "snat": "self",
               "virtualPort": 80,
               "pool": "REPLACEMENT_NAMESPACE_app_svc_pool"
             },
-            "customHTTPProfile": {
-              "class": "HTTP_Profile",
-              "xForwardedFor": true
-            },
-            "custoOneConnectProfile": {
-              "class": "Multiplex_Profile",
-              "sourceMask": "255.255.255.255"
-            },
             "REPLACEMENT_NAMESPACE_app_svc_pool": {
               "class": "Pool",
               "monitors": [
-                "tcp",
-                "http"
+                "tcp"
               ],
               "loadBalancingMode": "least-connections-member",
               "members": [

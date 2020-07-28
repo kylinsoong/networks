@@ -5,7 +5,6 @@ metadata:
   namespace: REPLACEMENT_NAMESPACE
   annotations:
     virtual-server.f5.com/ip: "192.168.5.3"
-    virtual-server.f5.com/partition: "k8s"
 spec:
   rules:
   - host: REPLACEMENT_NAMESPACE.example.com

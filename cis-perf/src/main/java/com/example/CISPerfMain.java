@@ -66,19 +66,20 @@ public class CISPerfMain implements CommandLineRunner {
 		}
 		
 		String net_prefix = net.substring(0, net.length() - 5);
-		
-		System.out.println("Generating K8S deployments to " + deploy);
+		boolean first = true;
+		int start = 100;
 		
 		if(isSingleNamsespace) {
 			
-			String ns = "cistest100";
-			boolean first = true;
+			String ns = "cistest";
 			boolean firstCM = true;
-			
-			String cmStart = getResourceFileAsString("cmsingle.start");
-			cmStart = cmStart.replaceAll("REPLACEMENT_NAMESPACE", ns);
-			StringBuffer sb = new StringBuffer();
+						
+		
+			String cmStart = getResourceFileAsString("cmsingle.start"); 
+			cmStart = cmStart.replaceAll("REPLACEMENT_NAMESPACE", ns); 
+			StringBuffer sb = new StringBuffer(); 
 			sb.append(cmStart);
+			
 			
 			for (int i = 0 ; i < count ; i ++) {
 				
@@ -103,13 +104,14 @@ public class CISPerfMain implements CommandLineRunner {
 					Files.createFile(Paths.get(configmap));
 				} else {
 					Files.write(Paths.get(deploy), "---\n".getBytes(), StandardOpenOption.APPEND);
+					//Files.write(Paths.get(configmap), "---\n".getBytes(), StandardOpenOption.APPEND);
 				}
 				
 				Files.write(Paths.get(deploy), raw.getBytes(), StandardOpenOption.APPEND);
 				Files.write(Paths.get(deploy), "\n".getBytes(), StandardOpenOption.APPEND);
 				
 				//configmap
-				String cm = getResourceFileAsString("cmsingle.content");
+				String cm = getResourceFileAsString("cmsingle.content");				
 				cm = cm.replaceAll("REPLACEMENT_NAMESPACE", ns);
 				cm = cm.replaceAll("REPLACEMENT_SVC_NAME", svc);
 				String vip = net_prefix + "." + (i + ip_start);
@@ -121,42 +123,34 @@ public class CISPerfMain implements CommandLineRunner {
 				} else {
 					sb.append(",").append("\n").append(cm);
 				}
-				
+			
 			}
 			
-			System.out.println("Generating AS3 configmap to " + configmap);
 			
-			String cmEnd = getResourceFileAsString("cmsingle.end");
-			sb.append("\n").append(cmEnd);
-			Files.write(Paths.get(configmap), sb.toString().getBytes());
+			 
+			 String cmEnd = getResourceFileAsString("cmsingle.end");
+			 sb.append("\n").append(cmEnd); 
+			 Files.write(Paths.get(configmap),
+			 sb.toString().getBytes());
+			 
 			
 		} else {
-			int start = 100;
-			boolean first = true;
-			boolean firstCM = true;
 			
-			String cmStart = getResourceFileAsString("cm.start");
-			StringBuffer sb = new StringBuffer();
-			sb.append(cmStart);
+			/*
+			 *  Used in CIS 2.0
+			 *  
+			 * boolean firstCM = true; 
+			 * String cmStart = getResourceFileAsString("cm.start");
+			 * StringBuffer sb = new StringBuffer(); 
+			 * sb.append(cmStart);
+			 * 
+			 * String cmEnd = getResourceFileAsString("cm.end");
+			 * sb.append("\n").append(cmEnd);
+			 */
 					
 			for (int i = 0 ; i < count ; i ++) {
-				
-				String raw = getResourceFileAsString("deploy.yaml");
-				String ingressraw = getResourceFileAsString("ingress.yaml");
+					
 				String ns = "perftest" + String.valueOf(start + i);
-							
-				raw = raw.replaceAll("REPLACEMENT_NAMESPACE", ns);
-				raw = raw.replaceAll("REPLACEMENT_BACKEND_IMAGE", backend);
-				
-				ingressraw  = ingressraw.replaceAll("REPLACEMENT_NAMESPACE", ns);
-				
-				if(i % 3 == 0) {
-					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_1");
-				} else if(i % 3 == 1) {
-					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_2");
-				} if(i % 3 == 2) {
-					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_3");
-				}
 				
 				if(first) {
 					first = false;
@@ -165,57 +159,60 @@ public class CISPerfMain implements CommandLineRunner {
 					}
 					Files.createFile(Paths.get(deploy));
 					
-					if (Files.exists(Paths.get(configmap))) {
-						Files.delete(Paths.get(configmap));
-					}
-					Files.createFile(Paths.get(configmap));
-					
 					if (Files.exists(Paths.get(ingress))) {
 						Files.delete(Paths.get(ingress));
 					}
 					Files.createFile(Paths.get(ingress));
+					
+					if (Files.exists(Paths.get(configmap))) {
+						Files.delete(Paths.get(configmap));
+					}
+					Files.createFile(Paths.get(configmap));
 				} else {
 					Files.write(Paths.get(deploy), "---\n".getBytes(), StandardOpenOption.APPEND);
 					Files.write(Paths.get(ingress), "---\n".getBytes(), StandardOpenOption.APPEND);
+					Files.write(Paths.get(configmap), "---\n".getBytes(), StandardOpenOption.APPEND);
 				}
 				
+				// append to deploy.yaml
+				String raw = getResourceFileAsString("deploy.yaml");
+				raw = raw.replaceAll("REPLACEMENT_NAMESPACE", ns);
+				raw = raw.replaceAll("REPLACEMENT_BACKEND_IMAGE", backend);
+
+				if(i % 3 == 0) {
+					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_1");
+				} else if(i % 3 == 1) {
+					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_2");
+				} if(i % 3 == 2) {
+					raw = raw.replaceAll("REPLACEMENT_ZONE", "zone_3");
+				}
 				Files.write(Paths.get(deploy), raw.getBytes(), StandardOpenOption.APPEND);
 				Files.write(Paths.get(deploy), "\n".getBytes(), StandardOpenOption.APPEND);
 				
-				// ingress
+				// append to ingress.yaml
+				String ingressraw = getResourceFileAsString("ingress.yaml");
+				ingressraw  = ingressraw.replaceAll("REPLACEMENT_NAMESPACE", ns);
 				Files.write(Paths.get(ingress), ingressraw.getBytes(), StandardOpenOption.APPEND);
 				Files.write(Paths.get(ingress), "\n".getBytes(), StandardOpenOption.APPEND);
 				
 				
-				// configmap
-				
-				String cm = getResourceFileAsString("cm.content");
+				// append to configmap.yaml
+				String cm = getResourceFileAsString("cm.yaml");
 				cm = cm.replaceAll("REPLACEMENT_NAMESPACE", ns);
 				String vip = net_prefix + "." + (i + ip_start);
 				cm = cm.replaceAll("REPLACEMENT_BIGIP_VS_IP_ADDR", vip);
-		
-				if(firstCM) {
-					firstCM = false;
-					sb.append("\n").append(cm);
-				} else {
-					sb.append(",").append("\n").append(cm);
-				}
-				
-				
-				
+				Files.write(Paths.get(configmap), cm.getBytes(), StandardOpenOption.APPEND);
+				Files.write(Paths.get(configmap), "\n".getBytes(), StandardOpenOption.APPEND);	
 			}
 			
-			System.out.println("Generating ingress to " + ingress);
-			System.out.println("Generating AS3 configmap to " + configmap);
 			
-			String cmEnd = getResourceFileAsString("cm.end");
-			sb.append("\n").append(cmEnd);
-			Files.write(Paths.get(configmap), sb.toString().getBytes());
+			System.out.println("Generating ingress to " + ingress);
+			
+
 		}
-				
 		
-		
-		
+		System.out.println("Generating K8S deployments to " + deploy);
+		System.out.println("Generating AS3 configmap to " + configmap);
 		
 	}
 	

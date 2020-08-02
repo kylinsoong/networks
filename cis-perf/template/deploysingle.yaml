@@ -6,7 +6,7 @@ metadata:
   name: REPLACEMENT_APP_NAME
   namespace: REPLACEMENT_NAMESPACE
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: REPLACEMENT_APP_NAME

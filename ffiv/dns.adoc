@@ -19,12 +19,21 @@
 |===
 |名称 |描述
 
-|vs
-|GTM􏱄中最小的对象，逻辑组织在 server 和 pool 中，*其 IP 即为 GTM 最终提供解析的结果*
+|Datacenter
+|物理对象，表示一个数据中心。
+
+* 也可以设计为逻辑数据中心，每链路为一 DC
+* 包括 Servers, Links
 
 |Server
-|
-* 用来代表一个 server 实体，类似于 LTM 中的 Node
+|Server 在数据中心中包括：
+
+* BIG-IP GTM
+* BIG-IP LTM 和 LC
+* 单独的服务器和其他负载均衡产品
+
+用来代表一个 server 实体，类似于 LTM 中的 Node
+
 * GTM 中server 分为两类：
 ** BIG-IP Server
 ** Non BIG-IP Server
@@ -32,11 +41,8 @@
 * 关联某个 Link
 * 可设定监控检查，容量控制
 
-|Datacenter
-|物理对象，表示一个数据中心。
-
-* 也可以设计为逻辑数据中心，每链路为一 DC
-* 包括 Servers, Links
+|vs
+|GTM􏱄中最小的对象，逻辑组织在 server 和 pool 中，*其 IP 即为 GTM 最终提供解析的结果*
 
 |Link
 |表述 datacenter 中的链路，与数据中心关联

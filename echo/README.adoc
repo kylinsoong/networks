@@ -24,6 +24,16 @@ gcc client.c lib_utils.c lib_ios.c lib_socket.c str_cli.c -o echoclient
 ./echoclient <IP>
 ----
 
+[source, bash]
+.*Docker*
+----
+docker build -t echoserver .
+docker tag echoserver:latest cloudadc/echoserver:1.0
+docker push cloudadc/echoserver:1.0
+
+docker run -p 8877:8877 cloudadc/echoserver:1.0
+----
+
 == 用户手册
 
 .*标准因特网服务*

@@ -1,6 +1,12 @@
 = Q & A
 :toc: manual
 
+== Quick Link
+
+* Displaying the BIG-IP software version - https://support.f5.com/csp/article/K8759
+* BIG-IP DNS synchronization group requirements - https://support.f5.com/csp/article/K13734
+* Overview of DNS query processing on BIG-IP systems - https://support.f5.com/csp/article/K14510
+
 == Networking
 
 1. In routed mode, due to the full proxy architecture, there should be a connection between BIG-IP and backend server, why check from backend server, the source is Client, rather than Big-IP(`10.1.20.12:8081         10.1.10.199:10177`)?

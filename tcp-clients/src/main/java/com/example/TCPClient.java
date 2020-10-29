@@ -1,8 +1,11 @@
 package com.example;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import org.springframework.boot.CommandLineRunner;
@@ -23,9 +26,8 @@ public class TCPClient implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 		
 		String host = LOCAL_HOST;
-		int port = ECHO_PORT;
-		boolean reset = false;
-		boolean activeClose = false;
+		int port = ECHO_PORT;	
+		boolean isClose = false;
 		
 		for(int i = 0 ; i < args.length ; i++) {
 			
@@ -33,10 +35,8 @@ public class TCPClient implements CommandLineRunner {
 				host = args[++i];
 			} else if (args[i].equals("--port")) {
 				port = Integer.parseInt(args[++i]);
-			} else if (args[i].equals("--rest")) {
-				reset = true;
-			} else if (args[i].equals("--active")) {
-				activeClose = true;
+			} else if (args[i].equals("--close"))  {
+				isClose = true;
 			} else if (args[i].equals("--help") || args[i].equals("-h")) {
 				System.out.println("Run ");
 				System.out.println("  java -jar tcp-clients.jar --host <Host> --port <Port> ");			
@@ -44,31 +44,55 @@ public class TCPClient implements CommandLineRunner {
 			}
 		}
 		
-		if (reset) {
-			//TODO--
+		List<Socket> list = new ArrayList<>();
+		
+		while(true) {
+			
+			Scanner in = new Scanner(System.in);
+			
+			System.out.println("Entered 'interger' to continue or 'q' to quit");
+			
+			String s = in.nextLine();
+			
+			if(s.equals("q") || s.equals("quit")) {
+				
+				in.close();
+				
+				if(!isClose) {
+					list.forEach(c -> {
+						try {
+							c.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					});
+				}		
+				break;
+			}
+			
+			Integer num;
+			try {
+				num = Integer.parseInt(s);
+			} catch (NumberFormatException e) {
+				num = 1;
+			}
+			
+			System.out.println("create " + num + " connections");
+			for(int i = 0 ; i < num ; i ++ ) {
+				SocketAddress address = new InetSocketAddress(host, port);
+				Socket socket = new Socket();
+				socket.connect(address, 2000);
+				if(isClose) {
+					socket.close();
+				} else {
+					list.add(socket);
+				}
+				
+			}
+			
+			
 		}
 		
-		if(activeClose) {
-			
-			SocketAddress address = new InetSocketAddress(host, port);
-			Socket socket = new Socket();
-			socket.connect(address, 2000);
-			
-			Thread.sleep(5 * 1000);
-			
-			socket.close();
-			
-		} else {
-
-                        SocketAddress address = new InetSocketAddress(host, port);
-                        Socket socket = new Socket();
-                        socket.connect(address, 2000);
-                }
-
-		System.out.println("\nPress \"ENTER\" to continue...");
-		Scanner scanner = new Scanner(System.in);
-		scanner.nextLine();			
-		scanner.close();
 
 	}
 

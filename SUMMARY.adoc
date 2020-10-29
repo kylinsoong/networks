@@ -23,6 +23,7 @@
 ... link:ffiv/iControl-rest.adoc[iControl REST]
 ... link:ffiv/iControl.adoc[iControl® LX]
 ... link:ffiv/ts.adoc[Telemetry Streaming]
+.. link:ffiv/dc.adoc[双活数据中心]
 .. link:ffiv/qa.adoc[Q & A]
 . link:nginx/README.adoc[Nginx]
 .. link:nginx/concepts.adoc[入门到精通]

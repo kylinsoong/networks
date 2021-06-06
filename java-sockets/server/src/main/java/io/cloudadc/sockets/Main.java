@@ -42,6 +42,7 @@ public class Main implements CommandLineRunner {
 			
 			while(true) {
 				Socket socket = serverSocket.accept();
+				System.out.println("Receive a docket: " + socket);
 				while(true) {
 					
 					InputStream in = socket.getInputStream();
@@ -63,7 +64,7 @@ public class Main implements CommandLineRunner {
 					} 
 					
 					
-					System.out.println("\n[" + socket + "] Received bytes, length: [" + rBuf.length + "], data: [" + new BigInteger(rBuf).toString() + "]");
+					System.out.println("\n[" + socket + "] Received bytes, length: [" + rBuf.length + "], data: \n" + new BigInteger(rBuf).toString());
 					
 				}
 			}

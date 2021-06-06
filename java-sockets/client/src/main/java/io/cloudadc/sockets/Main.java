@@ -54,15 +54,17 @@ public class Main implements CommandLineRunner {
         if(data != null) {
         	write(output, data);
         } else {
-        	write(output, l1);
-            write(output, l2);
-            write(output, l3);
-            write(output, l4);
-            
-            write(output, m1);
-            write(output, m2);
-            write(output, m3);
-            write(output, m4);
+        	for (int i = 0 ; i < 1000 ; i++) {
+        		write(output, l1);
+                write(output, l2);
+                write(output, l3);
+                write(output, l4);
+                
+                write(output, m1);
+                write(output, m2);
+                write(output, m3);
+                write(output, m4);
+        	}
         }
         
         pressToContinue();

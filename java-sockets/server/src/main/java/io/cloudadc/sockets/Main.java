@@ -1,9 +1,11 @@
 package io.cloudadc.sockets;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Arrays;
 
 import org.slf4j.Logger;
@@ -22,7 +24,7 @@ public class Main implements CommandLineRunner {
 	}
 
 	@Override
-	public void run(String... args) throws Exception {
+	public void run(String... args)  throws Exception{
 		
 		int port = 0;
 		
@@ -37,17 +39,36 @@ public class Main implements CommandLineRunner {
 		ServerSocket serverSocket = null;
 		try {
 			serverSocket = new ServerSocket(port);
-			
 			System.out.println("Server started: " + serverSocket);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			
+			
 			
 			while(true) {
-				Socket socket = serverSocket.accept();
-				System.out.println("Receive a docket: " + socket);
+				Socket socket = null;
+				try {
+					socket = serverSocket.accept();
+					System.out.println("\nReceive a docket: " + socket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					continue;
+				}
+				
 				while(true) {
 					
-					InputStream in = socket.getInputStream();
-					byte[] buf = new byte[2048];
-					in.read(buf);
+					byte[] buf = null;
+					try {
+						InputStream in = socket.getInputStream();
+						buf = new byte[2048];
+						in.read(buf);
+					} catch (IOException e) {
+						e.printStackTrace();
+						break;
+					}
 					
 					int length = 0;
 					for(int i = 0 ; i < 2048 ; i ++) {
@@ -68,7 +89,7 @@ public class Main implements CommandLineRunner {
 					
 				}
 			}
-		} finally {
+		}  finally {
 			if(serverSocket != null) {
 				serverSocket.close();
 			}

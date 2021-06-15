@@ -52,6 +52,7 @@ public class Main implements CommandLineRunner {
         OutputStream output = socket.getOutputStream();
         
         if(data != null) {
+        	pressToContinue();
         	write(output, data);
         } else {
         	for (int i = 0 ; i < 1000 ; i++) {

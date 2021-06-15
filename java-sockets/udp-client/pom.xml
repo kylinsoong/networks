@@ -7,8 +7,8 @@
         <artifactId>sockets-parent</artifactId>
         <version>0.0.1</version>
     </parent>
-    <artifactId>tcp-server</artifactId>
-    <name>Java Sockets TCP Server</name>
+    <artifactId>udp-client</artifactId>
+    <name>Java Sockets UDP Client</name>
 
 
     <dependencies>

@@ -7,8 +7,8 @@
         <artifactId>sockets-parent</artifactId>
         <version>0.0.1</version>
     </parent>
-    <artifactId>sockets-client</artifactId>
-    <name>Sockets Java Client</name>
+    <artifactId>tcp-client</artifactId>
+    <name>Java Sockets TCP Client</name>
 
 
     <dependencies>

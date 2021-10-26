@@ -4,6 +4,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -49,6 +51,11 @@ public class Main implements CommandLineRunner {
 		    Thread.sleep(1000 * 30);
 		}
         
+	}
+	
+	static void tmp () {
+		
+		SSLSocketFactory factory =(SSLSocketFactory)SSLSocketFactory.getDefault();
 	}
 	
 

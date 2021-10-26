@@ -1,6 +1,181 @@
 = Telemetry Streaming 
 :toc: manual
 
+== TS with Kafka
+
+[source, bash]
+.*1. Verify installation*
+----
+$ curl -k -s -u 'admin:admin' https://192.168.200.204/mgmt/shared/telemetry/info | jq
+{
+  "nodeVersion": "v4.8.0",
+  "version": "1.22.0",
+  "release": "1",
+  "schemaCurrent": "1.22.0",
+  "schemaMinimum": "0.9.0"
+}
+----
+
+[source, bash]
+.*2. 声明式配置*
+----
+$ curl -k -s -u 'admin:admin' https://192.168.200.204/mgmt/shared/telemetry/declare -H "Content-Type: application/json" -X POST -d "$(cat files/kafka.json)" | jq
+{
+  "message": "success",
+  "declaration": {
+    "class": "Telemetry",
+    "My_System": {
+      "class": "Telemetry_System",
+      "systemPoller": {
+        "interval": 60,
+        "enable": true,
+        "actions": [
+          {
+            "setTag": {
+              "tenant": "`T`",
+              "application": "`A`"
+            },
+            "enable": true
+          }
+        ]
+      },
+      "enable": true,
+      "host": "localhost",
+      "port": 8100,
+      "protocol": "http",
+      "allowSelfSignedCert": false
+    },
+    "My_Listener": {
+      "class": "Telemetry_Listener",
+      "port": 6514,
+      "enable": true,
+      "trace": false,
+      "match": "",
+      "actions": [
+        {
+          "setTag": {
+            "tenant": "`T`",
+            "application": "`A`"
+          },
+          "enable": true
+        }
+      ]
+    },
+    "My_Consumer": {
+      "class": "Telemetry_Consumer",
+      "type": "Kafka",
+      "host": "192.168.200.201",
+      "protocol": "binaryTcp",
+      "port": 31172,
+      "topic": "f5-telemetry",
+      "enable": true,
+      "trace": false,
+      "allowSelfSignedCert": false,
+      "authenticationProtocol": "None"
+    },
+    "schemaVersion": "1.22.0"
+  }
+}
+----
+
+[source, bash]
+.*3. 查看当前已配置的 Declaration*
+----
+$ curl -k -s -u 'admin:admin' https://192.168.200.204/mgmt/shared/telemetry/declare | jq
+{
+  "message": "success",
+  "declaration": {
+    "class": "Telemetry",
+    "My_System": {
+      "class": "Telemetry_System",
+      "systemPoller": {
+        "interval": 60,
+        "enable": true,
+        "actions": [
+          {
+            "setTag": {
+              "tenant": "`T`",
+              "application": "`A`"
+            },
+            "enable": true
+          }
+        ]
+      },
+      "enable": true,
+      "host": "localhost",
+      "port": 8100,
+      "protocol": "http",
+      "allowSelfSignedCert": false
+    },
+    "My_Listener": {
+      "class": "Telemetry_Listener",
+      "port": 6514,
+      "enable": true,
+      "trace": false,
+      "match": "",
+      "actions": [
+        {
+          "setTag": {
+            "tenant": "`T`",
+            "application": "`A`"
+          },
+          "enable": true
+        }
+      ]
+    },
+    "My_Consumer": {
+      "class": "Telemetry_Consumer",
+      "type": "Kafka",
+      "host": "192.168.200.201",
+      "protocol": "binaryTcp",
+      "port": 31172,
+      "topic": "f5-telemetry",
+      "enable": true,
+      "trace": false,
+      "allowSelfSignedCert": false,
+      "authenticationProtocol": "None"
+    },
+    "schemaVersion": "1.22.0"
+  }
+}
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
+[source, bash]
+.**
+----
+
+----
+
 == 什么是 TS
 
 Telemetry Streaming (TS) 是一个 link:iControl.adoc[iControl LX] 的扩展，提供一个独立于 TMOS 的 RPM 包，可以将 BIG-IP 上的统计信息和事件通过声明式、标准化方式转发到外部的消费者平台。支持的第三方平台包括：

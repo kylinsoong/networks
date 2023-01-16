@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>tcp-clients</artifactId>
+	<artifactId>esb-socket-sender</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>consuming-rest</name>
 	<description>Demo project for Spring Boot</description>
@@ -22,14 +22,11 @@
 	    <dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
-	   <!--  
+            </dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-       -->
-		
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
 	</dependencies>
 
 	<build>
